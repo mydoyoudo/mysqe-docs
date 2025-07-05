@@ -81,9 +81,9 @@ const config = {
       // Replace with your project's social card
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'My Site',
+        title: 'Mysqe',
         logo: {
-          alt: 'My Site Logo',
+          alt: 'Mysqe Logo',
           src: 'img/logo.svg',
         },
         items: [
@@ -92,7 +92,7 @@ const config = {
           { to: '/docs/scv/intro', label: 'SCV', position: 'left' },
           {
             href: 'https://github.com/mydoyoudo/mysqe-docs',
-            label: 'GitHub',
+            label: '@mysqe on GitHub',
             position: 'right',
           },
         ],
