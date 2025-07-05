@@ -87,15 +87,11 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
+          { to: '/docs/psis/intro', label: 'PSIS', position: 'left' },
+          { to: '/docs/agent/intro', label: 'Agent', position: 'left' },
+          { to: '/docs/scv/intro', label: 'SCV', position: 'left' },
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Tutorial',
-          },
-          {to: '/blog', label: 'Blog', position: 'left'},
-          {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/mydoyoudo/mysqe-docs',
             label: 'GitHub',
             position: 'right',
           },
