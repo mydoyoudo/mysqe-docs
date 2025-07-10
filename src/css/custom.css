@@ -41,14 +41,9 @@
 }
 
 .button--primary {
-  background: #32BEA6;
-  color: white;
-}
-
-.button--primary:hover {
-  background: #2aa894;
-  color: white;
-  text-decoration: none;
+  background: transparent;
+  color: #32BEA6;
+  border: 1px solid #32BEA6;
 }
 
 .button--secondary {
@@ -63,6 +58,26 @@
   text-decoration: none;
 }
 
+.button--outline {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.button--outline:hover {
+  background: #32BEA6;
+  color: white;
+  border-color: #32BEA6;
+  text-decoration: none;
+}
+
+/* 软件下载按钮悬停效果 - 背景变深 */
+.button--primary:hover {
+  background: #2aa894;
+  color: white;
+  text-decoration: none;
+}
+
 /* Dark mode button adjustments */
 [data-theme='dark'] .button--secondary {
   color: #ffffff;
@@ -72,6 +87,17 @@
 [data-theme='dark'] .button--secondary:hover {
   background: #ffffff;
   color: #1a1a1a;
+}
+
+[data-theme='dark'] .button--outline {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+[data-theme='dark'] .button--outline:hover {
+  background: #ffffff;
+  color: #1a1a1a;
+  border-color: #ffffff;
 }
 
 /* Responsive Design */
