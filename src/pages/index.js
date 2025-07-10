@@ -14,9 +14,9 @@ export default function Home() {
         background: '#fff',
         padding: '2rem'
       }}>
-        <h1 style={{ fontWeight: 300, fontSize: '3rem', margin: 0, color: '#32BEA6' }}>mysqe</h1>
-        <p style={{ color: '#888', marginBottom: '3rem', textAlign: 'center', maxWidth: '600px' }}>
-          提供各类技术文档、操作手册、软件下载和表格模板，为部门工作提供便捷的文档支持。
+        <h1 style={{ fontWeight: 300, fontSize: '3rem', margin: '-4rem 0 2rem 0', color: '#32BEA6' }}>mysqe</h1>
+        <p style={{ color: '#888', marginBottom: '3rem', textAlign: 'center', maxWidth: '600px', fontSize: '1.1rem', lineHeight: '1.6' }}>
+          提供便捷的文档支持（技术文档、操作手册、软件下载和表格模板）。
         </p>
         
         <div style={{ 
