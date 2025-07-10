@@ -60,8 +60,8 @@
 
 .button--outline {
   background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
+  color: #32BEA6;
+  border: 1px solid #32BEA6;
 }
 
 .button--outline:hover {
