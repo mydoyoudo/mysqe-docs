@@ -1,19 +1,14 @@
-facebook:
-  label: Facebook
-  permalink: /facebook
-  description: Facebook tag description
+digital-nomad:
+  label: Digital Nomad
+  permalink: /digital-nomad
+  description: Digital nomad lifestyle and experiences
 
-hello:
-  label: Hello
-  permalink: /hello
-  description: Hello tag description
+engineering:
+  label: Engineering
+  permalink: /engineering
+  description: Engineering projects and technical content
 
-docusaurus:
-  label: Docusaurus
-  permalink: /docusaurus
-  description: Docusaurus tag description
-
-hola:
-  label: Hola
-  permalink: /hola
-  description: Hola tag description
+investment:
+  label: Investment
+  permalink: /investment
+  description: Investment strategies and portfolio management
