@@ -23,7 +23,7 @@ const config = {
   url: 'https://mydoyoudo.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/mysqe-docs/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -87,10 +87,9 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          { to: '/docs/tools', label: '🔧 SQM工具箱', position: 'left' },
-          { to: '/docs/knowledge', label: '📚 知识库', position: 'left' },
-          { to: '/docs/insights', label: '📈 行业洞察', position: 'left' },
-          { to: '/docs/about', label: '👤 关于我', position: 'left' },
+          { to: '/docs/software', label: '🔧 SQM工具箱', position: 'left' },
+          { to: '/docs/knowledge/sqm-fundamentals', label: '📚 知识库', position: 'left' },
+          { to: '/docs/manuals', label: '📋 操作手册', position: 'left' },
           { to: '/blog', label: '📝 博客', position: 'left' },
         ],
       },
@@ -102,15 +101,15 @@ const config = {
             items: [
               {
                 label: 'SQM工具箱',
-                to: '/docs/tools',
+                to: '/docs/software',
               },
               {
                 label: '专业知识库',
-                to: '/docs/knowledge',
+                to: '/docs/knowledge/sqm-fundamentals',
               },
               {
-                label: '行业洞察',
-                to: '/docs/insights',
+                label: '操作手册',
+                to: '/docs/manuals',
               },
             ],
           },
@@ -118,12 +117,12 @@ const config = {
             title: '关于专家',
             items: [
               {
-                label: '个人简介',
-                to: '/docs/about',
-              },
-              {
                 label: '实践博客',
                 to: '/blog',
+              },
+              {
+                label: '技术文档',
+                to: '/docs/technical',
               },
             ],
           },

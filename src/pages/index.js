@@ -55,7 +55,7 @@ export default function Home() {
           marginBottom: '3rem'
         }}>
           <Link 
-            to="/docs/tools"
+            to="/docs/software"
             style={{
               background: 'rgba(255,255,255,0.15)',
               backdropFilter: 'blur(10px)',
@@ -88,7 +88,7 @@ export default function Home() {
           </Link>
           
           <Link 
-            to="/docs/knowledge"
+            to="/docs/knowledge/sqm-fundamentals"
             style={{
               background: 'rgba(255,255,255,0.15)',
               backdropFilter: 'blur(10px)',
@@ -121,7 +121,7 @@ export default function Home() {
           </Link>
           
           <Link 
-            to="/docs/insights"
+            to="/docs/manuals"
             style={{
               background: 'rgba(255,255,255,0.15)',
               backdropFilter: 'blur(10px)',
@@ -148,9 +148,9 @@ export default function Home() {
               e.target.style.boxShadow = 'none';
             }}
           >
-            <span style={{ fontSize: '3rem' }}>📈</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>行业洞察</h3>
-            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>趋势分析与未来发展</p>
+            <span style={{ fontSize: '3rem' }}>📋</span>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>操作手册</h3>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>详细操作指南与流程</p>
           </Link>
         </div>
         
@@ -179,7 +179,7 @@ export default function Home() {
             📝 阅读专业博客
           </Link>
           <Link 
-            to="/docs/about" 
+            to="/docs/technical" 
             style={{ 
               background: 'transparent',
               border: '2px solid rgba(255,255,255,0.5)',
@@ -199,7 +199,7 @@ export default function Home() {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            👤 了解专家背景
+            📖 技术文档
           </Link>
         </div>
       </main>
