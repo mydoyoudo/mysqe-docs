@@ -25,14 +25,6 @@ export default function Home() {
           }}>
             mysqe
           </h1>
-          <p style={{ 
-            fontSize: '1.5rem', 
-            margin: '0 0 1rem 0',
-            fontWeight: 300,
-            opacity: 0.9
-          }}>
-            知识共享
-          </p>
         </div>
         
         <div style={{ 
@@ -72,41 +64,7 @@ export default function Home() {
             }}
           >
             <span style={{ fontSize: '3rem' }}>🔧</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>SQM工具箱</h3>
-            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>质量管理必备工具与模板</p>
-          </Link>
-          
-          <Link 
-            to="/docs/knowledge/sqm-fundamentals"
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              padding: '2rem',
-              textAlign: 'center',
-              fontSize: '1.1rem',
-              textDecoration: 'none',
-              borderRadius: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              color: '#fff',
-              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-5px)';
-              e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>📚</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>专业知识库</h3>
-            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>SQM理论基础与最佳实践</p>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>工具箱</h3>
           </Link>
           
           <Link 
@@ -138,8 +96,7 @@ export default function Home() {
             }}
           >
             <span style={{ fontSize: '3rem' }}>📋</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>操作手册</h3>
-            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>详细操作指南与流程</p>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>手册</h3>
           </Link>
         </div>
       </main>
