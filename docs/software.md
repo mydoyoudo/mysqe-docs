@@ -6,27 +6,17 @@
 
 ## 🎯 核心工具模块
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+### 📊 质量分析工具
+PPAP文档管理、SPC统计分析、供应商风险评估
+[了解详情 →](/docs/tools/quality-tools)
 
-<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
-  <h3>📊 质量分析工具</h3>
-  <p>PPAP文档管理、SPC统计分析、供应商风险评估</p>
-  <a href="/docs/tools/quality-tools" style="color: #007acc;">了解详情 →</a>
-</div>
+### 📋 审核模板库
+VDA 6.3、IATF 16949、专项审核检查表
+[查看模板 →](/docs/tools/audit-templates)
 
-<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
-  <h3>📋 审核模板库</h3>
-  <p>VDA 6.3、IATF 16949、专项审核检查表</p>
-  <a href="/docs/tools/audit-templates" style="color: #007acc;">查看模板 →</a>
-</div>
-
-<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
-  <h3>📈 KPI仪表板</h3>
-  <p>实时监控质量指标、供应商绩效评估</p>
-  <a href="/docs/tools/kpi-dashboard" style="color: #007acc;">体验Demo →</a>
-</div>
-
-</div>
+### 📈 KPI仪表板
+实时监控质量指标、供应商绩效评估
+[体验Demo →](/docs/tools/kpi-dashboard)
 
 ## 🚀 快速开始
 
@@ -60,24 +50,9 @@
 
 ## 📊 成功案例数据
 
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; margin: 2rem 0;">
-  <div>
-    <h3 style="color: #28a745; margin: 0;">500+</h3>
-    <p>企业用户</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">50万+</h3>
-    <p>供应商管理</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">30%</h3>
-    <p>质量成本降低</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">95%</h3>
-    <p>用户满意度</p>
-  </div>
-</div>
+| 企业用户 | 供应商管理 | 质量成本降低 | 用户满意度 |
+|---------|----------|------------|----------|
+| **500+** | **50万+** | **30%** | **95%** |
 
 ## 🎓 培训与支持
 

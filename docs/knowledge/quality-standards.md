@@ -135,49 +135,39 @@ ISO 9000族是国际标准化组织制定的质量管理和质量保证系列标
 
 ### 行业标准差异化要求
 
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin: 2rem 0;">
 
-<div style="border: 1px solid #007acc; padding: 1rem; border-radius: 8px;">
-<h4>🚗 汽车行业特色</h4>
+#### 🚗 汽车行业特色
 <ul>
 <li>缺陷预防导向</li>
 <li>统计方法强制应用</li>
 <li>核心工具集成要求</li>
 <li>供应链深度管控</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #28a745; padding: 1rem; border-radius: 8px;">
-<h4>✈️ 航空航天特色</h4>
+#### ✈️ 航空航天特色
 <ul>
 <li>配置管理严格要求</li>
 <li>关键项目特殊管控</li>
 <li>项目管理规范化</li>
 <li>可追溯性全覆盖</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #dc3545; padding: 1rem; border-radius: 8px;">
-<h4>🏥 医疗器械特色</h4>
+#### 🏥 医疗器械特色
 <ul>
 <li>法规符合性强制</li>
 <li>临床证据要求</li>
 <li>上市后监督机制</li>
 <li>风险管理全流程</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #ffc107; padding: 1rem; border-radius: 8px;">
-<h4>⚡ 电子行业特色</h4>
+#### ⚡ 电子行业特色
 <ul>
 <li>环保法规严格</li>
 <li>可靠性测试要求</li>
 <li>ESD防护规范</li>
 <li>技术变化快速适应</li>
 </ul>
-</div>
 
-</div>
 
 ## 🎯 标准选择指南
 

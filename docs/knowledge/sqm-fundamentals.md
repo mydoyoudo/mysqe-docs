@@ -64,49 +64,39 @@ graph LR
 
 ### 质量体系要素
 
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin: 2rem 0;">
 
-<div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
-<h4>🏗️ 体系建设</h4>
+#### 🏗️ 体系建设
 <ul>
 <li>质量方针与目标</li>
 <li>组织架构与职责</li>
 <li>程序文件与作业指导</li>
 <li>记录控制与文件管理</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
-<h4>⚙️ 过程管控</h4>
+#### ⚙️ 过程管控
 <ul>
 <li>关键过程识别</li>
 <li>过程控制计划</li>
 <li>统计过程控制(SPC)</li>
 <li>变更控制管理</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
-<h4>🔧 技术能力</h4>
+#### 🔧 技术能力
 <ul>
 <li>产品开发能力</li>
 <li>工艺设计能力</li>
 <li>检测试验能力</li>
 <li>问题解决能力</li>
 </ul>
-</div>
 
-<div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
-<h4>📈 绩效管理</h4>
+#### 📈 绩效管理
 <ul>
 <li>KPI指标体系</li>
 <li>数据收集分析</li>
 <li>绩效评估机制</li>
 <li>改进激励措施</li>
 </ul>
-</div>
 
-</div>
 
 ## 🎯 质量工具与方法
 
