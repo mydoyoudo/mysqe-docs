@@ -113,32 +113,6 @@ const config = {
               },
             ],
           },
-          {
-            title: '关于专家',
-            items: [
-              {
-                label: '实践博客',
-                to: '/blog',
-              },
-              {
-                label: '技术文档',
-                to: '/docs/technical',
-              },
-            ],
-          },
-          {
-            title: '联系方式',
-            items: [
-              {
-                label: '邮箱咨询',
-                href: 'mailto:contact@sqm-expert.com',
-              },
-              {
-                label: 'LinkedIn',
-                href: 'https://linkedin.com/in/sqm-expert',
-              },
-            ],
-          },
         ],
         copyright: `Copyright © ${new Date().getFullYear()} mysqe. All rights reserved.`,
       },

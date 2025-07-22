@@ -142,55 +142,6 @@ export default function Home() {
             <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>详细操作指南与流程</p>
           </Link>
         </div>
-        
-        <div style={{ textAlign: 'center', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link 
-            to="/blog" 
-            style={{ 
-              background: 'rgba(255,255,255,0.2)',
-              border: '2px solid rgba(255,255,255,0.3)',
-              color: '#fff',
-              padding: '0.8rem 2rem',
-              borderRadius: '25px',
-              textDecoration: 'none',
-              fontWeight: 500,
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.3)';
-              e.target.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.2)';
-              e.target.style.transform = 'scale(1)';
-            }}
-          >
-            📝 阅读专业博客
-          </Link>
-          <Link 
-            to="/docs/technical" 
-            style={{ 
-              background: 'transparent',
-              border: '2px solid rgba(255,255,255,0.5)',
-              color: '#fff',
-              padding: '0.8rem 2rem',
-              borderRadius: '25px',
-              textDecoration: 'none',
-              fontWeight: 500,
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.1)';
-              e.target.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.transform = 'scale(1)';
-            }}
-          >
-            📖 技术文档
-          </Link>
-        </div>
       </main>
     </Layout>
   );
