@@ -96,7 +96,7 @@ export default function Home() {
             }}
           >
             <span style={{ fontSize: '3rem' }}>📋</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>手册</h3>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>操作手册</h3>
           </Link>
         </div>
       </main>
