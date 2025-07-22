@@ -95,25 +95,6 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'SQM专业服务',
-            items: [
-              {
-                label: 'SQM工具箱',
-                to: '/docs/software',
-              },
-              {
-                label: '专业知识库',
-                to: '/docs/knowledge/sqm-fundamentals',
-              },
-              {
-                label: '操作手册',
-                to: '/docs/manuals',
-              },
-            ],
-          },
-        ],
         copyright: `Copyright © ${new Date().getFullYear()} mysqe. All rights reserved.`,
       },
       prism: {
