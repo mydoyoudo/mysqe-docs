@@ -31,18 +31,7 @@ export default function Home() {
             fontWeight: 300,
             opacity: 0.9
           }}>
-            供应商质量管理领域专家
-          </p>
-          <p style={{ 
-            color: 'rgba(255,255,255,0.8)', 
-            marginBottom: '2rem', 
-            textAlign: 'center', 
-            maxWidth: '700px', 
-            fontSize: '1.2rem', 
-            lineHeight: '1.6',
-            margin: '0 auto 2rem auto'
-          }}>
-            十年+质量管理经验 • 专业工具开发 • 行业趋势洞察 • 实践案例分享
+            知识共享
           </p>
         </div>
         
