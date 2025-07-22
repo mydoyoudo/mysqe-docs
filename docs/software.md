@@ -50,24 +50,9 @@ VDA 6.3、IATF 16949、专项审核检查表
 
 ## 📊 成功案例数据
 
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; margin: 2rem 0;">
-  <div>
-    <h3 style="color: #28a745; margin: 0;">500+</h3>
-    <p>企业用户</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">50万+</h3>
-    <p>供应商管理</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">30%</h3>
-    <p>质量成本降低</p>
-  </div>
-  <div>
-    <h3 style="color: #28a745; margin: 0;">95%</h3>
-    <p>用户满意度</p>
-  </div>
-</div>
+| 企业用户 | 供应商管理 | 质量成本降低 | 用户满意度 |
+|---------|----------|------------|----------|
+| **500+** | **50万+** | **30%** | **95%** |
 
 ## 🎓 培训与支持
 
