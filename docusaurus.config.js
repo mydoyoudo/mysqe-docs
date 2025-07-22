@@ -10,7 +10,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'SQM专家 | 供应商质量管理',
+  title: 'mysqe | 供应商质量管理',
   tagline: '专业的供应商质量管理解决方案与行业洞察',
   favicon: 'img/favicon.ico',
 
@@ -81,9 +81,9 @@ const config = {
       // Replace with your project's social card
       image: 'img/mysqe-social-card.jpg',
       navbar: {
-        title: 'SQM专家',
+        title: 'mysqe',
         logo: {
-          alt: 'SQM专家 Logo',
+          alt: 'mysqe Logo',
           src: 'img/logo.svg',
         },
         items: [
@@ -140,7 +140,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} SQM专家. All rights reserved.`,
+        copyright: `Copyright © ${new Date().getFullYear()} mysqe. All rights reserved.`,
       },
       prism: {
         theme: prismThemes.github,

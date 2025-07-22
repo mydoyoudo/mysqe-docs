@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 
 export default function Home() {
   return (
-    <Layout title="SQM专家 | 供应商质量管理" description="专业的供应商质量管理解决方案与行业洞察">
+    <Layout title="mysqe | 供应商质量管理" description="专业的供应商质量管理解决方案与行业洞察">
       <main style={{
         minHeight: '100vh',
         display: 'flex',
@@ -23,7 +23,7 @@ export default function Home() {
             color: '#fff',
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
           }}>
-            SQM专家
+            mysqe
           </h1>
           <p style={{ 
             fontSize: '1.5rem', 
