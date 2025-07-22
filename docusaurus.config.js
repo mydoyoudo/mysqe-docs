@@ -20,15 +20,15 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://mysqe.work',
+  url: 'https://mydoyoudo.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/mysqe-docs/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'mysqe', // Usually your GitHub org/user name.
-  projectName: 'mysqe.work', // Usually your repo name.
+  organizationName: 'mydoyoudo', // Usually your GitHub org/user name.
+  projectName: 'mysqe-docs', // Usually your repo name.
 
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
@@ -45,7 +45,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/mysqe/mysqe.work/tree/main/',
+            'https://github.com/mydoyoudo/mysqe-docs/tree/main/',
           // Disable auto-generated navigation
           routeBasePath: '/docs',
         },
@@ -58,7 +58,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/mysqe/mysqe.work/tree/main/',
+            'https://github.com/mydoyoudo/mysqe-docs/tree/main/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
