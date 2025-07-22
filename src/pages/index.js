@@ -4,109 +4,202 @@ import Link from '@docusaurus/Link';
 
 export default function Home() {
   return (
-    <Layout title="mysqe" description="提供各类技术文档、操作手册和软件下载">
+    <Layout title="SQM专家 | 供应商质量管理" description="专业的供应商质量管理解决方案与行业洞察">
       <main style={{
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        background: '#fff',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: '#fff',
         padding: '2rem'
       }}>
-        <h1 style={{ fontWeight: 300, fontSize: '3rem', margin: '-4rem 0 2rem 0', color: '#32BEA6' }}>mysqe</h1>
-        <p style={{ color: '#888', marginBottom: '3rem', textAlign: 'center', maxWidth: '600px', fontSize: '1.1rem', lineHeight: '1.6' }}>
-          提供便捷的文档支持（技术文档、操作手册、软件下载和表格模板）。
-        </p>
+        <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+          <h1 style={{ 
+            fontWeight: 700, 
+            fontSize: '3.5rem', 
+            margin: '0 0 1rem 0', 
+            color: '#fff',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+          }}>
+            SQM专家
+          </h1>
+          <p style={{ 
+            fontSize: '1.5rem', 
+            margin: '0 0 1rem 0',
+            fontWeight: 300,
+            opacity: 0.9
+          }}>
+            供应商质量管理领域专家
+          </p>
+          <p style={{ 
+            color: 'rgba(255,255,255,0.8)', 
+            marginBottom: '2rem', 
+            textAlign: 'center', 
+            maxWidth: '700px', 
+            fontSize: '1.2rem', 
+            lineHeight: '1.6',
+            margin: '0 auto 2rem auto'
+          }}>
+            十年+质量管理经验 • 专业工具开发 • 行业趋势洞察 • 实践案例分享
+          </p>
+        </div>
         
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
           gap: '2rem', 
           width: '100%', 
-          maxWidth: '800px',
+          maxWidth: '1000px',
           marginBottom: '3rem'
         }}>
           <Link 
-            className="button button--primary" 
-            to="/docs/software"
+            to="/docs/tools"
             style={{
-              padding: '1.5rem',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              padding: '2rem',
               textAlign: 'center',
               fontSize: '1.1rem',
               textDecoration: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '1rem',
+              color: '#fff',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-5px)';
+              e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
             }}
           >
-            <span style={{ fontSize: '2rem' }}>💾</span>
-            软件下载
+            <span style={{ fontSize: '3rem' }}>🔧</span>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>SQM工具箱</h3>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>质量管理必备工具与模板</p>
           </Link>
           
           <Link 
-            className="button button--secondary" 
-            to="/docs/manuals"
+            to="/docs/knowledge"
             style={{
-              padding: '1.5rem',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              padding: '2rem',
               textAlign: 'center',
               fontSize: '1.1rem',
               textDecoration: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '1rem',
+              color: '#fff',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-5px)';
+              e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
             }}
           >
-            <span style={{ fontSize: '2rem' }}>📖</span>
-            操作手册
+            <span style={{ fontSize: '3rem' }}>📚</span>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>专业知识库</h3>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>SQM理论基础与最佳实践</p>
           </Link>
           
           <Link 
-            className="button button--outline" 
-            to="/docs/technical"
+            to="/docs/insights"
             style={{
-              padding: '1.5rem',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              padding: '2rem',
               textAlign: 'center',
               fontSize: '1.1rem',
               textDecoration: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '1rem',
+              color: '#fff',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-5px)';
+              e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
             }}
           >
-            <span style={{ fontSize: '2rem' }}>🔧</span>
-            技术文档
-          </Link>
-          
-          <Link 
-            className="button button--outline" 
-            to="/docs/forms"
-            style={{
-              padding: '1.5rem',
-              textAlign: 'center',
-              fontSize: '1.1rem',
-              textDecoration: 'none',
-              borderRadius: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <span style={{ fontSize: '2rem' }}>📋</span>
-            表格模板
+            <span style={{ fontSize: '3rem' }}>📈</span>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>行业洞察</h3>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>趋势分析与未来发展</p>
           </Link>
         </div>
         
-        <div style={{ textAlign: 'center' }}>
-          <Link className="button button--outline" to="/blog" style={{ marginRight: '1rem' }}>
-            查看更新日志
+        <div style={{ textAlign: 'center', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link 
+            to="/blog" 
+            style={{ 
+              background: 'rgba(255,255,255,0.2)',
+              border: '2px solid rgba(255,255,255,0.3)',
+              color: '#fff',
+              padding: '0.8rem 2rem',
+              borderRadius: '25px',
+              textDecoration: 'none',
+              fontWeight: 500,
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.3)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            📝 阅读专业博客
+          </Link>
+          <Link 
+            to="/docs/about" 
+            style={{ 
+              background: 'transparent',
+              border: '2px solid rgba(255,255,255,0.5)',
+              color: '#fff',
+              padding: '0.8rem 2rem',
+              borderRadius: '25px',
+              textDecoration: 'none',
+              fontWeight: 500,
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.1)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            👤 了解专家背景
           </Link>
         </div>
       </main>

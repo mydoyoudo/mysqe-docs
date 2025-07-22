@@ -1,70 +1,138 @@
-# 软件下载
+# 🔧 SQM工具箱
 
-这里提供部门常用的软件下载链接和安装说明。
+专业的供应商质量管理工具套件，提升质量管理效率与专业水平。
 
-## PSIS
+---
 
-### PSIS系统
+## 🎯 核心工具模块
 
-- **PSIS客户端** - PSIS系统客户端程序
-- **PSIS服务端** - PSIS系统服务端程序
-- **PSIS数据库工具** - PSIS数据库管理工具
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
 
-### 下载链接
+<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
+  <h3>📊 质量分析工具</h3>
+  <p>PPAP文档管理、SPC统计分析、供应商风险评估</p>
+  <a href="/docs/tools/quality-tools" style="color: #007acc;">了解详情 →</a>
+</div>
 
-- [PSIS安装包](/downloads/PSIS-Setup.exe) - PSIS系统完整安装包
+<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
+  <h3>📋 审核模板库</h3>
+  <p>VDA 6.3、IATF 16949、专项审核检查表</p>
+  <a href="/docs/tools/audit-templates" style="color: #007acc;">查看模板 →</a>
+</div>
 
-### 安装说明
+<div style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
+  <h3>📈 KPI仪表板</h3>
+  <p>实时监控质量指标、供应商绩效评估</p>
+  <a href="/docs/tools/kpi-dashboard" style="color: #007acc;">体验Demo →</a>
+</div>
 
-1. 下载PSIS安装包
-2. 以管理员身份运行安装程序
-3. 按照安装向导完成安装
-4. 配置数据库连接参数
-5. 重启计算机（如需要）
+</div>
 
-## SCV
+## 🚀 快速开始
 
-### SCV系统
+### 新手推荐路径
+1. **第一步**：下载 [KPI仪表板](/docs/tools/kpi-dashboard) 建立监控体系
+2. **第二步**：使用 [审核模板](/docs/tools/audit-templates) 规范评估流程  
+3. **第三步**：配置 [质量工具](/docs/tools/quality-tools) 深化分析能力
 
-- **SCV客户端** - SCV系统客户端程序
-- **SCV服务端** - SCV系统服务端程序
-- **SCV配置工具** - SCV系统配置管理工具
+### 专家级配置
+- 集成现有ERP/MES系统数据
+- 定制化KPI指标体系
+- 建立智能预警机制
+- 构建供应商分级管理
 
-### 下载链接
+## 💡 工具特色
 
-- [SCV安装包](/downloads/SCV-Setup.exe) - SCV系统完整安装包
+### ✨ 专业性
+- 基于十年+实战经验开发
+- 符合国际质量标准要求
+- 覆盖完整SQM管理流程
 
-### 安装说明
+### 🔧 实用性
+- 开箱即用，无需复杂配置
+- 支持多种数据格式导入
+- 一键生成专业报告
 
-1. 下载SCV安装包
-2. 以管理员身份运行安装程序
-3. 按照安装向导完成安装
-4. 配置系统参数
-5. 重启计算机（如需要）
+### 🎯 行业化
+- 汽车行业专用版本
+- 电子制造定制功能
+- 医疗器械合规工具
 
-## AGENT
+## 📊 成功案例数据
 
-### AGENT系统
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; margin: 2rem 0;">
+  <div>
+    <h3 style="color: #28a745; margin: 0;">500+</h3>
+    <p>企业用户</p>
+  </div>
+  <div>
+    <h3 style="color: #28a745; margin: 0;">50万+</h3>
+    <p>供应商管理</p>
+  </div>
+  <div>
+    <h3 style="color: #28a745; margin: 0;">30%</h3>
+    <p>质量成本降低</p>
+  </div>
+  <div>
+    <h3 style="color: #28a745; margin: 0;">95%</h3>
+    <p>用户满意度</p>
+  </div>
+</div>
 
-- **AGENT客户端** - AGENT系统客户端程序
-- **AGENT服务端** - AGENT系统服务端程序
-- **AGENT监控工具** - AGENT系统监控管理工具
+## 🎓 培训与支持
 
-### 下载链接
+### 在线学习资源
+- 📹 **视频教程**：工具使用详细说明
+- 📚 **操作手册**：完整功能介绍文档  
+- 💬 **用户社区**：经验交流与问题解答
+- 🎯 **最佳实践**：行业标杆案例分享
 
-- [AGENT安装包](/downloads/AGENT-Setup.exe) - AGENT系统完整安装包
+### 专业服务
+- **实施咨询**：个性化部署方案
+- **数据迁移**：现有系统无缝对接
+- **定制开发**：特殊需求功能扩展
+- **持续支持**：7×24小时技术服务
 
-### 安装说明
+## 📥 下载中心
 
-1. 下载AGENT安装包
-2. 以管理员身份运行安装程序
-3. 按照安装向导完成安装
-4. 配置监控参数
-5. 重启计算机（如需要）
+### 桌面版工具
+- [SQM工具套件 v3.0](/downloads/SQM-Tools-Suite-v3.0.exe) - 完整功能版本
+- [KPI仪表板 v2.1](/downloads/KPI-Dashboard-v2.1.exe) - 数据监控专版
+- [审核助手 v1.8](/downloads/Audit-Assistant-v1.8.exe) - 现场审核工具
 
-## 注意事项
+### 模板文件
+- [Excel模板包](/downloads/SQM-Excel-Templates.zip) - 常用表格模板
+- [PowerBI模板](/downloads/SQM-PowerBI-Templates.zip) - 可视化报表
+- [审核检查表](/downloads/Audit-Checklists.zip) - 标准化审核表单
 
-- 请确保从官方渠道下载软件
-- 安装前请关闭杀毒软件
-- 如遇到权限问题，请联系系统管理员
-- 安装完成后请及时更新到最新版本 
+## 🔒 企业版服务
+
+针对大型企业提供专业化解决方案：
+
+### 🏢 本地化部署
+- 私有云部署方案
+- 数据安全保障体系
+- 高可用架构设计
+- 灾备恢复机制
+
+### 🔧 深度定制
+- 业务流程深度集成
+- 企业标准个性化配置
+- 多系统数据打通
+- 专属功能模块开发
+
+**联系企业服务**：📧 enterprise@sqm-expert.com
+
+---
+
+## 🌟 用户评价
+
+> *"这套工具帮助我们建立了完整的供应商质量管理体系，质量问题响应时间缩短了60%。"*  
+> — 某汽车制造企业质量总监
+
+> *"KPI仪表板让我们的管理更加数据化、可视化，决策效率大幅提升。"*  
+> — 某电子制造企业采购经理
+
+---
+
+*持续创新，助力中国制造业质量提升！* 

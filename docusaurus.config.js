@@ -10,7 +10,8 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'mysqe',
+  title: 'SQM专家 | 供应商质量管理',
+  tagline: '专业的供应商质量管理解决方案与行业洞察',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -74,61 +75,73 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       metadata: [
-        { name: 'description', content: '部门文档下载中心 - 提供各类技术文档、操作手册和软件下载' },
-        { name: 'keywords', content: '文档下载, 技术文档, 操作手册, 软件下载, 部门文档' },
+        { name: 'description', content: 'SQM供应商质量管理专家 - 提供专业的质量管理工具、行业知识、趋势洞察和实践经验分享' },
+        { name: 'keywords', content: 'SQM, 供应商质量管理, 质量控制, 供应链管理, 质量工具, 行业洞察, 质量体系' },
       ],
       // Replace with your project's social card
       image: 'img/mysqe-social-card.jpg',
       navbar: {
-        title: 'mysqe',
+        title: 'SQM专家',
         logo: {
-          alt: 'mysqe Logo',
+          alt: 'SQM专家 Logo',
           src: 'img/logo.svg',
         },
         items: [
-          { to: '/docs/software', label: '软件下载', position: 'left' },
-          { to: '/docs/manuals', label: '操作手册', position: 'left' },
-          { to: '/docs/technical', label: '技术文档', position: 'left' },
-          { to: '/docs/forms', label: '表格模板', position: 'left' },
-          { to: '/blog', label: '更新日志', position: 'left' },
-
+          { to: '/docs/tools', label: '🔧 SQM工具箱', position: 'left' },
+          { to: '/docs/knowledge', label: '📚 知识库', position: 'left' },
+          { to: '/docs/insights', label: '📈 行业洞察', position: 'left' },
+          { to: '/docs/about', label: '👤 关于我', position: 'left' },
+          { to: '/blog', label: '📝 博客', position: 'left' },
         ],
       },
       footer: {
         style: 'dark',
         links: [
           {
-            title: '文档分类',
+            title: 'SQM专业服务',
             items: [
               {
-                label: '软件下载',
-                to: '/docs/software',
+                label: 'SQM工具箱',
+                to: '/docs/tools',
               },
               {
-                label: '操作手册',
-                to: '/docs/manuals',
+                label: '专业知识库',
+                to: '/docs/knowledge',
               },
               {
-                label: '技术文档',
-                to: '/docs/technical',
+                label: '行业洞察',
+                to: '/docs/insights',
               },
             ],
           },
           {
-            title: '其他资源',
+            title: '关于专家',
             items: [
               {
-                label: '表格模板',
-                to: '/docs/forms',
+                label: '个人简介',
+                to: '/docs/about',
               },
               {
-                label: '更新日志',
+                label: '实践博客',
                 to: '/blog',
               },
             ],
           },
+          {
+            title: '联系方式',
+            items: [
+              {
+                label: '邮箱咨询',
+                href: 'mailto:contact@sqm-expert.com',
+              },
+              {
+                label: 'LinkedIn',
+                href: 'https://linkedin.com/in/sqm-expert',
+              },
+            ],
+          },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} mysqe.work`,
+        copyright: `Copyright © ${new Date().getFullYear()} SQM专家. All rights reserved.`,
       },
       prism: {
         theme: prismThemes.github,
