@@ -87,9 +87,8 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          { to: '/docs/software', label: '🔧 SQM工具箱', position: 'left' },
-          { to: '/docs/knowledge/sqm-fundamentals', label: '📚 知识库', position: 'left' },
-          { to: '/docs/manuals', label: '📋 操作手册', position: 'left' },
+          { to: '/docs/software', label: '🔧 工具箱', position: 'left' },
+          { to: '/docs/manuals', label: '📋 操作指南', position: 'left' },
         ],
       },
       footer: {
