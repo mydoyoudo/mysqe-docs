@@ -33,7 +33,7 @@ const config = {
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
-  staticDirectories: ['static', 'speater/dist'],
+  staticDirectories: ['static'],
 
 
 

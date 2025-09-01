@@ -5,7 +5,7 @@ import Head from '@docusaurus/Head';
 export default function SpeaterPage() {
   useEffect(() => {
     // 直接跳转到构建好的 Speater 应用
-    window.location.href = '/speater/';
+    window.location.href = '/speater-app/app.html';
   }, []);
 
   return (
@@ -20,7 +20,7 @@ export default function SpeaterPage() {
           <div className="col col--8 col--offset-2">
             <div className="text--center margin-bottom--lg">
               <h1>正在加载 Speater...</h1>
-              <p>如果页面没有自动跳转，请<a href="/speater/">点击这里</a>访问 Speater 应用。</p>
+              <p>如果页面没有自动跳转，请<a href="/speater-app/app.html">点击这里</a>访问 Speater 应用。</p>
             </div>
           </div>
         </div>
