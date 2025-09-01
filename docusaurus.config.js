@@ -33,6 +33,8 @@ const config = {
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
+  staticDirectories: ['static', 'speater/dist'],
+
 
 
   presets: [
@@ -89,6 +91,7 @@ const config = {
         items: [
           { to: '/docs/software', label: '🔧 工具箱', position: 'left' },
           { to: '/docs/manuals', label: '📋 操作手册', position: 'left' },
+          { to: '/speater', label: '📊 Speater', position: 'left' },
         ],
       },
       footer: {
