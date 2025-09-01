@@ -93,7 +93,7 @@ const config = {
       },
       footer: {
         style: 'dark',
-        copyright: `Copyright © ${new Date().getFullYear()} mysqe. All rights reserved.`,
+        copyright: `Copyright © ${new Date().getFullYear()} ROZBRIL LTD. All rights reserved.`,
       },
       prism: {
         theme: prismThemes.github,

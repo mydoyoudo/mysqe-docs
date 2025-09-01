@@ -25,6 +25,14 @@ export default function Home() {
           }}>
             mysqe
           </h1>
+          <p style={{
+            fontSize: '1.2rem',
+            margin: '0 0 1rem 0',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: 300
+          }}>
+            ROZBRIL LTD 旗下产品
+          </p>
         </div>
         
         <div style={{ 
