@@ -100,8 +100,9 @@ const config = {
         },
         items: [
           { to: '/docs/templates', label: '📁 模板', position: 'left' },
+          { to: '/docs/knowledge', label: '📚 知识库', position: 'left' },
           { to: '/docs/software', label: '🔧 工具箱', position: 'left' },
-          { to: '/docs/manuals', label: '📋 操作手册', position: 'left' },
+          { to: '/docs/manuals', label: '📋 手册', position: 'left' },
           { to: '/speater', label: '📊 Speater', position: 'left' },
         ],
       },
