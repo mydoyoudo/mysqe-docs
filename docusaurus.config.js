@@ -20,7 +20,7 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://mydoyoudo.github.io',
+  url: 'https://mysqe.work',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -35,7 +35,15 @@ const config = {
 
   staticDirectories: ['static'],
 
-
+  plugins: [
+    [
+      '@docusaurus/plugin-sitemap',
+      {
+        changefreq: 'weekly',
+        priority: 0.5,
+      },
+    ],
+  ],
 
   presets: [
     [
@@ -79,9 +87,11 @@ const config = {
       metadata: [
         { name: 'description', content: 'SQM供应商质量管理专家 - 提供专业的质量管理工具、行业知识、趋势洞察和实践经验分享' },
         { name: 'keywords', content: 'SQM, 供应商质量管理, 质量控制, 供应链管理, 质量工具, 行业洞察, 质量体系' },
+        { name: 'canonical', content: 'https://mysqe.work' },
       ],
       // Replace with your project's social card
       image: 'img/mysqe-social-card.jpg',
+      url: 'https://mysqe.work',
       navbar: {
         title: 'mysqe',
         logo: {
