@@ -35,15 +35,8 @@ const config = {
 
   staticDirectories: ['static'],
 
-  plugins: [
-    [
-      '@docusaurus/plugin-sitemap',
-      {
-        changefreq: 'weekly',
-        priority: 0.5,
-      },
-    ],
-  ],
+  // NOTE: sitemap 由 preset-classic 内置, 显式注册会与 preset 冲突
+  // ("Plugin docusaurus-plugin-sitemap is used 2 times with ID default"), 故此处不再注册。
 
   presets: [
     [
