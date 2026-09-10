@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应商每日 5M1E / LOT 回复看板 | mysqe</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --line:#e3e8ef; --text:#1f2937; --muted:#6b7280;
+    --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --info:#3b82f6; --dark:#111827;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;background:var(--bg);color:var(--text);padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:21px;font-weight:700;letter-spacing:-.2px}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:5px}
+  .controls{display:flex;gap:8px;align-items:center}
+  select,button{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);cursor:pointer}
+  button:hover{border-color:var(--info)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+  .kpi .lbl{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .kpi .val{font-size:26px;font-weight:700;line-height:1.1}
+  .kpi .foot{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--info)}
+  .kpi.ok::after{background:var(--ok)} .kpi.warn::after{background:var(--warn)} .kpi.bad::after{background:var(--bad)}
+  .kpi.bad .val{color:var(--bad)} .kpi.warn .val{color:var(--warn)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+  .panel h2{font-size:14.5px;padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .panel h2 .count{font-size:12px;font-weight:500;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafbfc;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid #f1f4f8;vertical-align:middle}
+  tr.row{cursor:pointer;transition:background .15s}
+  tr.row:hover{background:#f8fafc}
+  tr.row.open{background:#f8fafc}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+  .tag.ok{background:#e7f8f1;color:#067952}
+  .tag.miss{background:#eef1f5;color:#5b6472}
+  .tag.chg{background:#fff4e5;color:#b45309}
+  .tag.iss{background:#fdecec;color:#b91c1c}
+  .tag.none{background:#f3f4f6;color:#9ca3af}
+  /* 一闪一闪 */
+  @keyframes flashAlert{0%,100%{background:#fffdf5}50%{background:#fff1c2}}
+  @keyframes flashIssue{0%,100%{background:#fffafa}50%{background:#ffdcdc}}
+  tr.row.alert{animation:flashAlert 1.6s ease-in-out infinite}
+  tr.row.issue{animation:flashIssue 1.2s ease-in-out infinite}
+  tr.row.miss{background:#f4f5f7;color:#9aa1ab}
+  tr.row.miss .code{color:#9aa1ab}
+  .bar{display:inline-block;width:3px;height:14px;border-radius:2px;vertical-align:-2px;margin-right:7px}
+  .bar.alert{background:var(--warn)} .bar.issue{background:var(--bad)} .bar.miss{background:#c3c9d2}
+  .detail{display:none;background:#fbfcfe}
+  .detail td{padding:0}
+  .detail .inner{padding:12px 16px 16px 32px;font-size:12.5px;line-height:1.7}
+  .detail .inner b{font-weight:600}
+  .m5e{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .m5e span{font-size:11.5px;padding:2px 9px;border-radius:6px;background:#eef2f7;color:#475569}
+  .m5e span.on{background:#ffe4e4;color:#b91c1c;font-weight:600}
+  .box{border-left:3px solid var(--warn);background:#fffaf0;padding:9px 12px;border-radius:0 8px 8px 0;margin-top:8px}
+  .box.bad{border-color:var(--bad);background:#fff7f7}
+  .empty{padding:16px;font-size:13px;color:var(--muted)}
+  .demo{background:#fff4e5;border:1px solid #fcd9a4;color:#8a5300;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:14px;display:none}
+  footer{font-size:11.5px;color:var(--muted);text-align:center;padding:14px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>供应商每日 5M1E / LOT 回复看板</h1>
+      <div class="sub" id="sub">每日 10:00 前回复 · 人 / 机 / 料 / 法 / 测 / 环 变更及供货 LOT 异常</div>
+    </div>
+    <div class="controls">
+      <select id="dateSel"></select>
+      <button id="refreshBtn">刷新</button>
+    </div>
+  </header>
+
+  <div class="demo" id="demoNote">演示数据（DEMO）— 接入真实回复数据后此提示自动消失</div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="panel">
+    <h2>回复明细 <span class="count" id="listCount"></span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:38px">#</th>
+          <th>业体</th>
+          <th style="width:88px">回复</th>
+          <th style="width:74px">时间</th>
+          <th style="width:104px">5M1E 变更</th>
+          <th style="width:104px">LOT 异常</th>
+          <th style="width:64px">详情</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>变更 / 异常公示 <span class="count" id="alertCount"></span></h2>
+    <div id="alerts"></div>
+  </div>
+
+  <footer>mysqe · 供应商质量管理 · <span id="updatedAt"></span></footer>
+</div>
+
+<script>
+const M5E = [["Man","人"],["Machine","机"],["Material","料"],["Method","法"],["Measurement","测"],["Environment","环"]];
+let DATA = null;
+
+async function boot(){
+  const idx = await fetch("data/index.json",{cache:"no-store"}).then(r=>r.json()).catch(()=>null);
+  if(!idx || !idx.dates || !idx.dates.length){
+    document.getElementById("tbody").innerHTML = '<tr><td colspan="7" class="empty">暂无数据。等待首次数据推送。</td></tr>';
+    return;
+  }
+  const sel = document.getElementById("dateSel");
+  sel.innerHTML = idx.dates.map(d=>`<option value="${d}">${d}</option>`).join("");
+  sel.value = idx.dates[0];
+  sel.onchange = ()=>load(sel.value);
+  document.getElementById("refreshBtn").onclick = ()=>load(sel.value);
+  await load(idx.dates[0]);
+}
+
+async function load(date){
+  const r = await fetch(`data/${date}.json`,{cache:"no-store"});
+  DATA = await r.json();
+  render();
+}
+
+function render(){
+  const s = DATA.suppliers || [];
+  const total = s.length;
+  const replied = s.filter(x=>x.replied).length;
+  const miss = total - replied;
+  const chg = s.filter(x=>hasChange(x)).length;
+  const iss = s.filter(x=>x.lot && x.lot.issue).length;
+
+  document.getElementById("sub").textContent =
+    `${DATA.date} · 每日 10:00 前回复 · 人 / 机 / 料 / 法 / 测 / 环 变更及供货 LOT 异常`;
+  document.getElementById("demoNote").style.display = DATA.demo ? "block" : "none";
+  document.getElementById("updatedAt").textContent = "数据更新时间 " + (DATA.updated || "—");
+  document.getElementById("listCount").textContent = `共 ${total} 家`;
+  document.getElementById("alertCount").textContent = `${chg} 项变更 / ${iss} 项 LOT 异常`;
+
+  document.getElementById("kpis").innerHTML = [
+    kpi("应回复业体", total, "每日 10:00 前", ""),
+    kpi("已回复", replied, `${total? Math.round(replied/total*100):0}% 完成`, "ok"),
+    kpi("未回复", miss, miss? "需催办" : "全部完成", miss? "bad":"ok"),
+    kpi("5M1E 变更", chg, "含变更业体数", chg? "warn":""),
+    kpi("LOT 异常", iss, "含异常业体数", iss? "bad":""),
+  ].join("");
+
+  const tb = document.getElementById("tbody");
+  tb.innerHTML = "";
+  s.forEach((x,i)=>{
+    const cl = !x.replied ? "miss" : (x.lot&&x.lot.issue ? "issue" : (hasChange(x)?"alert":""));
+    const bar = !x.replied ? '<span class="bar miss"></span>' : (x.lot&&x.lot.issue?'<span class="bar issue"></span>':(hasChange(x)?'<span class="bar alert"></span>':''));
+    const tr = document.createElement("tr");
+    tr.className = "row " + cl;
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${bar}<b>${esc(x.name||"")}</b> <span class="code">${esc(x.code||"")}</span></td>
+      <td>${x.replied?'<span class="tag ok">已回复</span>':'<span class="tag miss">未回复</span>'}</td>
+      <td>${esc(x.replied_at||"—")}</td>
+      <td>${hasChange(x)?'<span class="tag chg">有变更</span>':'<span class="tag none">无</span>'}</td>
+      <td>${x.lot&&x.lot.issue?'<span class="tag iss">有异常</span>':(x.replied?'<span class="tag none">无</span>':'<span class="tag none">—</span>')}</td>
+      <td style="color:#9aa1ab">▾</td>`;
+    tr.onclick = ()=>{
+      const d = tr.nextElementSibling;
+      if(d && d.classList.contains("detail")){ d.style.display = d.style.display==="table-row"?"none":"table-row"; tr.classList.toggle("open"); }
+    };
+    tb.appendChild(tr);
+
+    const dtr = document.createElement("tr");
+    dtr.className = "detail";
+    dtr.innerHTML = `<td colspan="7"><div class="inner">${detailHtml(x)}</div></td>`;
+    tb.appendChild(dtr);
+  });
+
+  const alerts = s.filter(x=>hasChange(x) || (x.lot&&x.lot.issue));
+  document.getElementById("alerts").innerHTML = alerts.length ? alerts.map(x=>{
+    const is = x.lot&&x.lot.issue;
+    const changes = M5E.filter(([k])=>x.m1e && x.m1e[k]).map(([k,cn])=>cn);
+    return `<div class="box ${is?'bad':''}">
+      <b>${esc(x.name||"")}</b> <span class="code">${esc(x.code||"")}</span>
+      ${changes.length?`<div>5M1E 变更：<b>${changes.join(" / ")}</b></div>`:""}
+      ${is?`<div>LOT 异常：${esc((x.lot&&x.lot.detail)||"—")}</div>`:""}
+      ${x.detail?`<div style="color:#6b7280">${esc(x.detail)}</div>`:""}
+      <div style="color:#9aa1ab;font-size:11.5px;margin-top:4px">回复时间 ${esc(x.replied_at||"—")}</div>
+    </div>`;
+  }).join("") : '<div class="empty">当日无变更 / 异常。</div>';
+}
+
+function detailHtml(x){
+  if(!x.replied) return `<span style="color:#9aa1ab">未回复（截止 ${esc(DATA.deadline||"10:00")}）</span>`;
+  const m = M5E.map(([k,cn])=>`<span class="${x.m1e&&x.m1e[k]?'on':''}">${cn}${x.m1e&&x.m1e[k]?' 有变更':''}</span>`).join("");
+  return `<b>5M1E 状态</b><div class="m5e">${m}</div>
+    ${x.lot&&x.lot.issue?`<div style="margin-top:8px"><b>LOT 异常</b>：${esc(x.lot.detail||"—")}</div>`:""}
+    ${x.detail?`<div style="margin-top:8px;color:#6b7280"><b>说明</b>：${esc(x.detail)}</div>`:""}`;
+}
+function hasChange(x){ return !!(x.m1e && Object.values(x.m1e).some(Boolean)); }
+function kpi(l,v,f,cls){ return `<div class="kpi ${cls}"><div class="lbl">${l}</div><div class="val">${v}</div><div class="foot">${f}</div></div>`; }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+boot();
+</script>
+</body>
+</html>

@@ -104,6 +104,7 @@ const config = {
           { to: '/docs/software', label: '🔧 工具箱', position: 'left' },
           { to: '/docs/manuals', label: '📋 手册', position: 'left' },
           { to: '/speater', label: '📊 Speater', position: 'left' },
+          { to: '/5m1e/', label: '📈 5M1E 看板', position: 'left' },
         ],
       },
       footer: {
