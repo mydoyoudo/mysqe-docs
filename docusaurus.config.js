@@ -23,7 +23,8 @@ const config = {
   url: 'https://mysqe.work',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  // 可用环境变量覆盖 (CI 用): GitHub Pages 子路径部署时设为 /mysqe-docs/
+  baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
