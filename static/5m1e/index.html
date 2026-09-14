@@ -127,6 +127,19 @@ async function boot(){
 }
 
 async function load(date){
+  // 优先实时打卡数据 (/api/checkins), 回退静态 JSON
+  try{
+    const r = await fetch("/api/checkins?date=" + encodeURIComponent(date), {cache:"no-store"});
+    if(r.ok){
+      const j = await r.json();
+      if(j && j.count > 0 && j.storage !== "unavailable"){
+        DATA = {date:j.date, deadline:"10:00", demo:false,
+                updated:"实时 · " + new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false}),
+                suppliers:j.suppliers};
+        render(); return;
+      }
+    }
+  }catch(e){ /* 回退静态 */ }
   const r = await fetch(`data/${date}.json`,{cache:"no-store"});
   DATA = await r.json();
   render();

@@ -1,24 +1,41 @@
 // GET /api/checkins?date=YYYY-MM-DD
-// 返回某日全部打卡记录（看板 / 催办用）
+// 返回某日全部业体的打卡状态（已打卡的含明细，未打卡的标记 replied:false）
 const { list } = require('@vercel/blob');
+
+function roster() {
+  try {
+    const t = JSON.parse(process.env.SUPPLIER_TOKENS || '{}');
+    const seen = new Map();
+    Object.values(t).forEach(v => { if (v && v.code) seen.set(v.code, v.name || ''); });
+    return Array.from(seen, ([code, name]) => ({ code, name }));
+  } catch (e) { return []; }
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const date = String((req.query && req.query.date) || '').trim() ||
     new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
 
+  let items = [];
+  let storage = 'ok';
   try {
     const { blobs } = await list({ prefix: 'checkins/' + date + '/' });
-    const items = [];
     for (const b of blobs) {
-      try {
-        const r = await fetch(b.url, { cache: 'no-store' });
-        items.push(await r.json());
-      } catch (e) { /* 跳过坏文件 */ }
+      try { const r = await fetch(b.url, { cache: 'no-store' }); items.push(await r.json()); }
+      catch (e) { /* skip */ }
     }
-    items.sort((a, b) => String(a.code).localeCompare(String(b.code)));
-    res.status(200).json({ date, count: items.length, suppliers: items });
-  } catch (e) {
-    res.status(200).json({ date, count: 0, suppliers: [], note: 'storage_unavailable' });
-  }
+  } catch (e) { storage = 'unavailable'; }
+
+  const map = {};
+  items.forEach(i => { if (i && i.code) map[i.code] = i; });
+
+  const list_ = roster();
+  const suppliers = list_.map(r => map[r.code] || {
+    code: r.code, name: r.name, replied: false, replied_at: null });
+  Object.keys(map).forEach(c => { if (!list_.some(r => r.code === c)) suppliers.push(map[c]); });
+
+  const replied = suppliers.filter(s => s.replied).length;
+  res.status(200).json({
+    date, count: suppliers.length, replied, storage, suppliers,
+  });
 };
