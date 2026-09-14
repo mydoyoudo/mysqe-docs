@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
   try {
     await put('checkins/' + date + '/' + info.code + '.json',
       JSON.stringify(payload, null, 2),
-      { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
+      { access: 'private', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
   } catch (e) {
     return res.status(500).json({ error: 'storage_error', message: String(e && e.message || e) });
   }

@@ -1,6 +1,6 @@
 // GET /api/checkins?date=YYYY-MM-DD
 // 返回某日全部业体的打卡状态（已打卡的含明细，未打卡的标记 replied:false）
-const { list } = require('@vercel/blob');
+const { list, get } = require('@vercel/blob');
 
 function roster() {
   try {
@@ -9,6 +9,11 @@ function roster() {
     Object.values(t).forEach(v => { if (v && v.code) seen.set(v.code, v.name || ''); });
     return Array.from(seen, ([code, name]) => ({ code, name }));
   } catch (e) { return []; }
+}
+async function readPrivate(pathname) {
+  const r = await get(pathname, { access: 'private' });
+  if (!r || r.statusCode !== 200 || !r.stream) return null;
+  return JSON.parse(await new Response(r.stream).text());
 }
 
 module.exports = async (req, res) => {
@@ -21,8 +26,10 @@ module.exports = async (req, res) => {
   try {
     const { blobs } = await list({ prefix: 'checkins/' + date + '/' });
     for (const b of blobs) {
-      try { const r = await fetch(b.url, { cache: 'no-store' }); items.push(await r.json()); }
-      catch (e) { /* skip */ }
+      try {
+        const j = await readPrivate(b.pathname);
+        if (j) items.push(j);
+      } catch (e) { /* skip */ }
     }
   } catch (e) { storage = 'unavailable'; }
 
@@ -35,7 +42,5 @@ module.exports = async (req, res) => {
   Object.keys(map).forEach(c => { if (!list_.some(r => r.code === c)) suppliers.push(map[c]); });
 
   const replied = suppliers.filter(s => s.replied).length;
-  res.status(200).json({
-    date, count: suppliers.length, replied, storage, suppliers,
-  });
+  res.status(200).json({ date, count: suppliers.length, replied, storage, suppliers });
 };
