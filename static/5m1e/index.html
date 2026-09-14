@@ -114,16 +114,15 @@ let DATA = null;
 
 async function boot(){
   const idx = await fetch("data/index.json",{cache:"no-store"}).then(r=>r.json()).catch(()=>null);
-  if(!idx || !idx.dates || !idx.dates.length){
-    document.getElementById("tbody").innerHTML = '<tr><td colspan="7" class="empty">暂无数据。等待首次数据推送。</td></tr>';
-    return;
-  }
   const sel = document.getElementById("dateSel");
-  sel.innerHTML = idx.dates.map(d=>`<option value="${d}">${d}</option>`).join("");
-  sel.value = idx.dates[0];
+  const today = new Date().toLocaleDateString("sv-SE");
+  const dates = ((idx && idx.dates) || []).slice();
+  if(dates.indexOf(today) < 0) dates.unshift(today);
+  sel.innerHTML = dates.map(d=>`<option value="${d}">${d}</option>`).join("");
+  sel.value = today;
   sel.onchange = ()=>load(sel.value);
   document.getElementById("refreshBtn").onclick = ()=>load(sel.value);
-  await load(idx.dates[0]);
+  await load(today);
 }
 
 async function load(date){
