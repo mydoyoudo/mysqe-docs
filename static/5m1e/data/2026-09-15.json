@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-15",
+  "deadline": "10:00",
+  "demo": false,
+  "source": "checkin-api",
+  "updated": "2026-09-15 10:05",
+  "suppliers": [
+    {
+      "code": "DUUJ",
+      "name": "格林",
+      "replied": false,
+      "replied_at": null
+    }
+  ]
+}
