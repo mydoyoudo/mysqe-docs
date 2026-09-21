@@ -36,6 +36,11 @@ const config = {
 
   staticDirectories: ['static'],
 
+  // 京东 OAuth 回调捕获：任意页面带 ?code= 时自动上报（见 static/js/jd-oauth-capture.js）
+  scripts: [
+    {src: 'js/jd-oauth-capture.js', defer: true},
+  ],
+
   // NOTE: sitemap 由 preset-classic 内置, 显式注册会与 preset 冲突
   // ("Plugin docusaurus-plugin-sitemap is used 2 times with ID default"), 故此处不再注册。
 
