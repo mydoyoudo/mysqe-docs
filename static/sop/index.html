@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSEC W46 SOP资源点检进展现况 | mysqe</title>
+<style>
+  :root{
+    --bg:#eef2f7; --card:#fff; --line:#e2e8f0; --text:#16233a; --muted:#6b7a90;
+    --done:#1f9d63; --doneBg:#e7f6ee;
+    --manual:#8aa31b; --manualBg:#f4f8e3;
+    --run:#e8890c; --runBg:#fdf1df;
+    --plan:#8b98a8; --planBg:#eef1f5;
+    --late:#e03d3d; --lateBg:#fdeaea;
+    --blue:#1e5fb0; --blueBg:#eaf2fb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Microsoft YaHei","PingFang SC",Segoe UI,sans-serif;
+    background:var(--bg);color:var(--text);padding:14px 18px 30px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1560px;margin:0 auto}
+
+  /* ---------- 标题栏 ---------- */
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1e5fb0,#3b8fd4);
+    display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff}
+  h1{font-size:19px;font-weight:800;letter-spacing:-.2px}
+  h1 em{font-style:normal;color:var(--blue)}
+  .clock{font-size:12px;color:var(--muted);margin-left:2px}
+  .clock b{color:var(--text);font-variant-numeric:tabular-nums}
+  .tools{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .tbtn{font:inherit;font-size:12.5px;padding:6px 12px;border:1px solid var(--line);border-radius:7px;
+    background:#fff;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;transition:.15s}
+  .tbtn:hover{border-color:var(--blue);color:var(--blue)}
+  .tbtn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tbtn.primary:hover{background:#17518f;color:#fff}
+
+  /* ---------- 汇总卡 ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:11px}
+  .kpi{border-radius:11px;padding:12px 15px;color:#fff;position:relative;overflow:hidden}
+  .kpi .lbl{font-size:12px;opacity:.9;margin-bottom:3px}
+  .kpi .val{font-size:29px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .kpi .val small{font-size:14px;font-weight:600;opacity:.85;margin-left:2px}
+  .kpi.k1{background:linear-gradient(135deg,#1e5fb0,#3277c8)}
+  .kpi.k2{background:linear-gradient(135deg,#1f9d63,#2bb87a)}
+  .kpi.k3{background:linear-gradient(135deg,#e8890c,#f5a632)}
+  .kpi.k4{background:linear-gradient(135deg,#7b8ca3,#93a4b9)}
+  .kpi.k5{background:linear-gradient(135deg,#16a34a,#26c56b)}
+  .kpi:after{content:"";position:absolute;right:-18px;bottom:-22px;width:76px;height:76px;
+    border-radius:50%;background:rgba(255,255,255,.11)}
+
+  /* ---------- 图例 ---------- */
+  .legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);
+    border-radius:9px;padding:9px 14px;font-size:12px;color:var(--muted);margin-bottom:14px}
+  .lg{display:flex;align-items:center;gap:5px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .legend .tip{margin-left:auto;color:var(--blue);background:var(--blueBg);padding:3px 10px;border-radius:999px;font-size:11.5px}
+
+  /* ---------- 阶段 ---------- */
+  .stage{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:13px;overflow:hidden}
+  .stage-hd{display:flex;align-items:center;gap:12px;padding:11px 16px 9px;border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,#fafcff,#fff)}
+  .stage-hd .nm{font-size:14px;font-weight:800}
+  .stage-hd .nm span{color:var(--muted);font-weight:600;font-size:12px;margin-left:5px}
+  .stage-hd .st{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .stage-hd .st b{color:var(--done)}
+  .stage-hd .win{margin-left:auto;font-size:11.5px;color:var(--muted);background:#f4f7fa;
+    padding:3px 9px;border-radius:6px;white-space:nowrap}
+  .pbar{height:3px;background:#eef2f7}
+  .pbar i{display:block;height:100%;transition:width .4s}
+
+  .row{display:flex;gap:11px;padding:13px 16px 0;flex-wrap:nowrap}
+  .row:last-child{padding-bottom:14px}
+  .row.rev{flex-direction:row-reverse;padding-top:11px}
+  .row .card{flex:1}
+
+  /* ---------- 节点卡 ---------- */
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px 9px;
+    cursor:pointer;transition:.16s;position:relative;overflow:hidden;min-width:0;
+    box-shadow:0 1px 2px rgba(16,32,56,.04)}
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(16,32,56,.11);border-color:#c9d6e6}
+  .card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--plan)}
+  .card[data-s="done"]:before{background:var(--done)}
+  .card[data-s="manual"]:before{background:var(--manual)}
+  .card[data-s="running"]:before{background:var(--run)}
+  .card[data-s="planned"]:before{background:var(--plan)}
+  .card[data-s="delayed"]:before{background:var(--late)}
+  .card .hd{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .no{width:19px;height:19px;border-radius:50%;background:#eef2f7;color:#5b6b80;font-size:11px;
+    font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .card[data-s="done"] .no{background:var(--doneBg);color:var(--done)}
+  .card[data-s="manual"] .no{background:var(--manualBg);color:var(--manual)}
+  .card[data-s="delayed"] .no{background:var(--lateBg);color:var(--late)}
+  .card[data-s="running"] .no{background:var(--runBg);color:var(--run)}
+  .tag{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;margin-left:auto}
+  .tag.done{background:var(--doneBg);color:var(--done)}
+  .tag.manual{background:var(--manualBg);color:var(--manual)}
+  .tag.running{background:var(--runBg);color:var(--run)}
+  .tag.planned{background:var(--planBg);color:var(--plan)}
+  .tag.delayed{background:var(--lateBg);color:var(--late)}
+  .card .name{font-size:12.5px;font-weight:700;line-height:1.45;margin-bottom:7px;min-height:36px}
+  .card .meta{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+  .chip{font-size:10.5px;padding:1px 7px;border-radius:5px;background:#f1f5f9;color:#5c6b80}
+  .chip.rpa{background:#eaf2fb;color:#24629f}
+  .times{font-size:11px;color:var(--muted);line-height:1.62;border-top:1px dashed #e8eef5;padding-top:6px}
+  .times .r{display:flex;justify-content:space-between;gap:6px}
+  .times .r b{font-weight:600;color:#3c4a5e;font-variant-numeric:tabular-nums}
+  .cmp{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+  .cmp span{font-size:10.5px;padding:1.5px 6px;border-radius:5px;font-weight:600}
+  .cmp .early{background:#e7f6ee;color:#15784c}
+  .cmp .ok{background:#eef2f7;color:#5b6b80}
+  .cmp .late{background:#fdeaea;color:#c22d2d}
+  .cmp .na{background:#f4f6f9;color:#9aa7b6}
+
+  /* ---------- 弹窗 ---------- */
+  .mask{position:fixed;inset:0;background:rgba(12,22,38,.45);display:none;align-items:center;
+    justify-content:center;z-index:60;padding:20px}
+  .mask.on{display:flex}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:430px;padding:20px 22px;
+    box-shadow:0 18px 50px rgba(10,24,44,.28)}
+  .modal h3{font-size:15px;margin-bottom:4px}
+  .modal .sub{font-size:12px;color:var(--muted);margin-bottom:15px;line-height:1.6}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .fld select,.fld input{width:100%;font:inherit;font-size:13px;padding:8px 10px;
+    border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+  .statuses{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .statuses button{font:inherit;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--muted)}
+  .statuses button.on{font-weight:700}
+  .statuses button.on[data-v="done"]{background:var(--doneBg);border-color:var(--done);color:var(--done)}
+  .statuses button.on[data-v="manual"]{background:var(--manualBg);border-color:var(--manual);color:var(--manual)}
+  .statuses button.on[data-v="running"]{background:var(--runBg);border-color:var(--run);color:var(--run)}
+  .statuses button.on[data-v="planned"]{background:var(--planBg);border-color:var(--plan);color:var(--plan)}
+  .statuses button.on[data-v="delayed"]{background:var(--lateBg);border-color:var(--late);color:var(--late)}
+  .mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+  .mfoot button{font:inherit;font-size:13px;padding:8px 18px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff}
+  .mfoot .save{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+
+  .foot{text-align:center;font-size:11.5px;color:#93a1b3;padding:10px 0 2px}
+  .foot a{color:#7f92a8;text-decoration:none;border-bottom:1px dotted #b8c4d2}
+  @media(max-width:1320px){.row{flex-wrap:wrap}.row .card{flex:1 1 200px}}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}h1{font-size:16px}.row .card{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="logo">▦</div>
+    <div>
+      <h1>SSEC <em id="wk">W46</em> SOP资源点检进展现况</h1>
+      <div class="clock">当前：<b id="clock">—</b></div>
+    </div>
+    <div class="tools">
+      <button class="tbtn" id="btnJson">⤓ 导出数据</button>
+      <button class="tbtn" id="btnCsv">⤓ 导出CSV</button>
+      <button class="tbtn" id="btnTpl">⤓ 下载模板</button>
+      <button class="tbtn" id="btnReset">↺ 重置</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi k1"><div class="lbl">总环节数</div><div class="val" id="kTotal">0</div></div>
+    <div class="kpi k2"><div class="lbl">已完成</div><div class="val" id="kDone">0</div></div>
+    <div class="kpi k3"><div class="lbl">进行中</div><div class="val" id="kRun">0</div></div>
+    <div class="kpi k4"><div class="lbl">计划中</div><div class="val" id="kPlan">0</div></div>
+    <div class="kpi k5"><div class="lbl">完成率</div><div class="val" id="kRate">0<small>%</small></div></div>
+  </div>
+
+  <div class="legend">
+    <div class="lg"><i class="dot" style="background:var(--done)"></i>已完成</div>
+    <div class="lg"><i class="dot" style="background:var(--manual)"></i>手动触发</div>
+    <div class="lg"><i class="dot" style="background:var(--run)"></i>进行中</div>
+    <div class="lg"><i class="dot" style="background:var(--plan)"></i>计划中</div>
+    <div class="lg"><i class="dot" style="background:var(--late)"></i>延迟</div>
+    <div class="tip">点击节点卡片可更新状态 &amp; 记录实际完成时间</div>
+  </div>
+
+  <div id="stages"></div>
+
+  <div class="foot">
+    <a href="/">← 返回 mysqe</a> · 数据保存在本机浏览器（localStorage），不上传服务器
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="mTitle">更新节点</h3>
+    <div class="sub" id="mSub"></div>
+    <div class="statuses" id="mStatus"></div>
+    <div class="fld">
+      <label>实际完成时间（例：周一 07:10 / 空 = 未完成）</label>
+      <input id="mActual" placeholder="周一 07:10">
+    </div>
+    <div class="mfoot">
+      <button id="mCancel">取消</button>
+      <button class="save" id="mSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+
+const STATUS_LABEL = {done:"已完成", manual:"手动触发", running:"进行中", planned:"计划中", delayed:"延迟"};
+const STAGE_META = {
+  P:{name:"P-SOP", sub:"(Pre-SOP)", win:"Monday AM"},
+  M:{name:"M-SOP", sub:"(Main SOP)", win:"Mon PM ~ Tue PM"},
+  F:{name:"F-SOP", sub:"(Final SOP)", win:"Tue PM ~ Thu"}
+};
+
+/* 截图里的 12 个环节 */
+const BASE = [
+  {no:1, stage:"P", name:"DownLoad SCM P-SOP & 整理", status:"done", dept:"生产管理", mode:"RPA",
+   target:"周一 07:30", limit:"周一 07:10", actual:"周一 07:10"},
+  {no:2, stage:"P", name:"购买 DownLoad BOM & 领料需求计算", status:"manual", dept:"购买", mode:"RPA",
+   target:"周一 11:00", limit:"", actual:"周一 11:40"},
+  {no:3, stage:"P", name:"供应商发送 BOM & 领料需求", status:"done", dept:"购买", mode:"手动",
+   target:"周二 12:00", limit:"周二 11:30", actual:"周二 12:00"},
+
+  {no:4, stage:"M", name:"DownLoad SCM M-SOP & 整理", status:"done", dept:"生产管理", mode:"RPA",
+   target:"周一 13:30", limit:"周一 13:11", actual:"周一 14:04"},
+  {no:5, stage:"M", name:"核对 GOCIM 汇总对比 P-SOP 差异", status:"done", dept:"生产管理", mode:"RPA",
+   target:"周一 16:30", limit:"周一 15:29", actual:"周一 15:59"},
+  {no:6, stage:"M", name:"购买增加型号 BOM 下载 & 需求计算", status:"manual", dept:"购买", mode:"RPA",
+   target:"周一 17:10", limit:"周一 16:52", actual:"周一 18:00"},
+
+  {no:7, stage:"M", name:"供应商发送增加型号 BOM & 资料需求", status:"delayed", dept:"购买", mode:"手动",
+   target:"周二 12:00", limit:"周一 17:20", actual:""},
+  {no:8, stage:"M", name:"购买资材问题点反馈", status:"delayed", dept:"购买", mode:"手动",
+   target:"周二 09:30", limit:"周一 09:30", actual:""},
+  {no:9, stage:"M", name:"开发新品情况点检", status:"done", dept:"开发", mode:"RPA",
+   target:"周二 09:30", limit:"周一 15:43", actual:"周一 15:53"},
+  {no:10, stage:"M", name:"金资材料周点汇总 & 可Confirm物品点检", status:"done", dept:"生产管理", mode:"手动",
+   target:"周二 10:30", limit:"周二 10:21", actual:"周二 09:41"},
+
+  {no:11, stage:"F", name:"F-SOP & SOPConfirm 情况确认", status:"planned", dept:"生产管理", mode:"RPA",
+   target:"周四 12:00", limit:"周四 12:16", actual:""},
+  {no:12, stage:"F", name:"SOP一致率情况点检", status:"planned", dept:"生产管理", mode:"RPA",
+   target:"周四 12:00", limit:"周四 11:20", actual:""}
+];
+
+const KEY = "ssec_sop_check_v1";
+let data = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return BASE.map(x=>({...x}));
+    const saved = JSON.parse(raw);
+    return BASE.map(x=>({...x, ...(saved[x.no]||{})}));
+  }catch(e){ return BASE.map(x=>({...x})); }
+}
+function persist(){
+  const o = {};
+  data.forEach(x=>{ o[x.no] = {status:x.status, actual:x.actual}; });
+  try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){}
+}
+
+/* ---------- 时间比较 ---------- */
+const DAY = {周一:0, 周二:1, 周三:2, 周四:3, 周五:4, 周六:5, 周日:6};
+function parseT(s){
+  if(!s) return null;
+  const m = String(s).trim().match(/^(周[一二三四五六日])\s*(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  return DAY[m[1]]*1440 + (+m[2])*60 + (+m[3]);
+}
+function fmtDur(min){
+  min = Math.abs(min);
+  if(min >= 60){ const h = Math.floor(min/60), r = min%60; return h+"h"+(r? r+"m":""); }
+  return min+"m";
+}
+function cmp(actual, ref){
+  const a = parseT(actual), r = parseT(ref);
+  if(a===null || r===null) return {cls:"na", txt:"--"};
+  const d = a - r;
+  if(d === 0) return {cls:"ok", txt:"准时"};
+  return d < 0 ? {cls:"early", txt:"提前"+fmtDur(d)} : {cls:"late", txt:"延后"+fmtDur(d)};
+}
+
+/* ---------- 渲染 ---------- */
+function countStatus(list){
+  const c = {done:0, manual:0, running:0, planned:0, delayed:0};
+  list.forEach(x=>c[x.status]=(c[x.status]||0)+1);
+  return c;
+}
+/* 与截图口径一致：已完成 = 总数 - 进行中 - 计划中（延迟也计入已完成） */
+const finished = c => c.done + c.manual + c.delayed;
+
+function cardHTML(x){
+  const cT = cmp(x.actual, x.target), cL = cmp(x.actual, x.limit);
+  return `<div class="card" data-s="${x.status}" data-no="${x.no}">
+    <div class="hd"><div class="no">${x.no}</div>
+      <span class="tag ${x.status}">${STATUS_LABEL[x.status]}</span></div>
+    <div class="name">${x.name}</div>
+    <div class="meta"><span class="chip">${x.dept}</span>
+      <span class="chip ${x.mode==="RPA"?"rpa":""}">${x.mode}</span></div>
+    <div class="times">
+      <div class="r"><span>目标</span><b>${x.target||"--"}</b></div>
+      <div class="r"><span>上限</span><b>${x.limit||"--"}</b></div>
+      <div class="r"><span>实际</span><b>${x.actual||"--"}</b></div>
+    </div>
+    <div class="cmp"><span class="${cT.cls}">vs目标 ${cT.txt}</span>
+      <span class="${cL.cls}">vs上限 ${cL.txt}</span></div>
+  </div>`;
+}
+
+function render(){
+  const c = countStatus(data);
+  const total = data.length, fin = finished(c);
+  $("#kTotal").textContent = total;
+  $("#kDone").textContent = fin;
+  $("#kRun").textContent = c.running;
+  $("#kPlan").textContent = c.planned;
+  $("#kRate").innerHTML = (total? Math.round(fin/total*100):0) + "<small>%</small>";
+
+  const stages = ["P","M","F"];
+  let html = "";
+  stages.forEach(k=>{
+    const list = data.filter(x=>x.stage===k).sort((a,b)=>a.no-b.no);
+    const cc = countStatus(list), f = finished(cc);
+    const pctv = list.length? f/list.length*100 : 0;
+    const barColor = pctv===100 ? "var(--done)" : (pctv>0 ? "var(--manual)" : "var(--plan)");
+    const meta = STAGE_META[k];
+
+    // 分行：P 一行 3 张；M 第一行 3 张 + 第二行 4 张（Z 字型反向）；F 一行 2 张
+    let rows = "";
+    if(k === "M"){
+      rows = `<div class="row">${list.slice(0,3).map(cardHTML).join("")}</div>
+              <div class="row rev">${list.slice(3).map(cardHTML).join("")}</div>`;
+    }else{
+      rows = `<div class="row">${list.map(cardHTML).join("")}</div>`;
+    }
+
+    html += `<div class="stage">
+      <div class="stage-hd">
+        <div class="nm">${meta.name}<span>${meta.sub}</span></div>
+        <div class="st"><b>${f}/${list.length} 完成</b>，${cc.running} 进行中，${cc.planned} 计划中</div>
+        <div class="win">${meta.win}</div>
+      </div>
+      <div class="pbar"><i style="width:${pctv}%;background:${barColor}"></i></div>
+      ${rows}
+    </div>`;
+  });
+  $("#stages").innerHTML = html;
+
+  document.querySelectorAll(".card").forEach(el=>{
+    el.addEventListener("click", ()=>openModal(+el.dataset.no));
+  });
+}
+
+/* ---------- 弹窗 ---------- */
+let editing = null;
+
+function openModal(no){
+  const x = data.find(v=>v.no===no);
+  if(!x) return;
+  editing = no;
+  $("#mTitle").textContent = `#${x.no} ${x.name}`;
+  $("#mSub").textContent = `目标 ${x.target||"--"} ／ 上限 ${x.limit||"--"}　·　${x.dept} / ${x.mode}`;
+  $("#mActual").value = x.actual || "";
+  $("#mStatus").innerHTML = Object.keys(STATUS_LABEL).map(k=>
+    `<button data-v="${k}" class="${x.status===k?"on":""}">${STATUS_LABEL[k]}</button>`).join("");
+  $("#mStatus").querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>{
+      $("#mStatus").querySelectorAll("button").forEach(y=>y.classList.remove("on"));
+      b.classList.add("on");
+    };
+  });
+  $("#mask").classList.add("on");
+}
+function closeModal(){ $("#mask").classList.remove("on"); editing = null; }
+
+$("#mCancel").onclick = closeModal;
+$("#mask").onclick = e=>{ if(e.target.id==="mask") closeModal(); };
+$("#mSave").onclick = ()=>{
+  const x = data.find(v=>v.no===editing);
+  if(!x) return closeModal();
+  const on = $("#mStatus").querySelector("button.on");
+  if(on) x.status = on.dataset.v;
+  x.actual = $("#mActual").value.trim();
+  persist(); render(); closeModal();
+};
+
+/* ---------- 工具栏 ---------- */
+$("#btnJson").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  download(blob, `SOP点检_${todayStr()}.json`);
+};
+$("#btnCsv").onclick = ()=>{
+  const head = ["编号","阶段","环节名称","状态","部门","方式","目标","上限","实际","vs目标","vs上限"];
+  const lines = [head.join(",")];
+  data.forEach(x=>{
+    const a = cmp(x.actual,x.target), b = cmp(x.actual,x.limit);
+    lines.push([x.no, STAGE_META[x.stage].name, q(x.name), STATUS_LABEL[x.status],
+      x.dept, x.mode, x.target, x.limit, x.actual||"", a.txt, b.txt].join(","));
+  });
+  const blob = new Blob(["\ufeff"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  download(blob, `SOP点检_${todayStr()}.csv`);
+};
+$("#btnTpl").onclick = ()=>{
+  const head = "编号,阶段,环节名称,状态,部门,方式,目标,上限,实际\n";
+  const rows = BASE.map(x=>[x.no, STAGE_META[x.stage].name, q(x.name), STATUS_LABEL[x.status],
+    x.dept, x.mode, x.target, x.limit, x.actual||""].join(",")).join("\r\n");
+  download(new Blob(["\ufeff"+head+rows], {type:"text/csv;charset=utf-8"}), "SOP点检_模板.csv");
+};
+$("#btnReset").onclick = ()=>{
+  if(!confirm("重置为初始状态？本机记录的修改会清空。")) return;
+  localStorage.removeItem(KEY);
+  data = BASE.map(x=>({...x}));
+  render();
+};
+
+function q(s){ s = String(s==null?"":s); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function todayStr(){
+  const d = new Date(), p = n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
+}
+function download(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+}
+
+/* ---------- 时钟 + 周数 ---------- */
+const WEEKDAY = ["周日","周一","周二","周三","周四","周五","周六"];
+function isoWeek(d){
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(),0,1));
+  return Math.ceil(((t - y0)/86400000 + 1)/7);
+}
+function tick(){
+  const d = new Date(), p = n=>String(n).padStart(2,"0");
+  $("#clock").textContent = `${WEEKDAY[d.getDay()]} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  $("#wk").textContent = "W" + isoWeek(d);
+}
+tick(); setInterval(tick, 1000);
+
+render();
+</script>
+</body>
+</html>

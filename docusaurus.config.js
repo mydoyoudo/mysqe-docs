@@ -105,6 +105,7 @@ const config = {
           { to: '/speater', label: '📊 Speater', position: 'left' },
           { to: '/5m1e/', label: '📈 5M1E 看板', position: 'left' },
           { to: '/iqc/', label: '🧪 IQC 看板', position: 'left' },
+          { to: '/sop/', label: '📋 SOP 点检', position: 'left' },
         ],
       },
       footer: {
