@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>平衡块全检 · IQC 实时看板 | mysqe</title>
+<style>
+  :root{--bg:#0d1420;--panel:#141d2b;--panel2:#1a2536;--line:#223043;--txt:#e8eef7;
+    --dim:#8fa2ba;--accent:#35c2f0;--ok:#2ecc8f;--warn:#ffb02e;--bad:#ff4d5e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;font-size:14px}
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;
+    background:linear-gradient(90deg,#101a29,#16223a);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  h1{margin:0;font-size:16px;font-weight:700}
+  h1 span{color:var(--accent)}
+  .spacer{flex:1}
+  .tool{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px}
+  input[type=date]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:6px;padding:5px 9px;font-size:13px;font-family:inherit}
+  button{font-family:inherit;cursor:pointer}
+  .btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:7px;padding:7px 14px;font-size:12.5px}
+  .btn.p{background:rgba(53,194,240,.15);border-color:var(--accent);color:var(--accent);font-weight:700}
+  main{padding:16px 18px 40px;max-width:1680px;margin:0 auto}
+  #drop{border:2px dashed #2b3d55;border-radius:14px;padding:56px 24px;text-align:center;
+    background:var(--panel);margin:22px 0}
+  #drop.on{border-color:var(--accent);background:rgba(53,194,240,.07)}
+  #drop .big{font-size:19px;font-weight:700;margin-bottom:10px}
+  #drop .sub{color:var(--dim);font-size:13px;line-height:1.9}
+  #drop .hint{margin-top:18px;color:#5f7186;font-size:11.5px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:13px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+    position:relative;overflow:hidden}
+  .kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .kpi.b:before{background:var(--bad)}.kpi.w:before{background:var(--warn)}.kpi.g:before{background:var(--ok)}
+  .kpi .lab{color:var(--dim);font-size:12px;margin-bottom:5px}
+  .kpi .val{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kpi .sub{color:var(--dim);font-size:11px;margin-top:4px}
+  .banner{background:rgba(255,77,94,.12);border:1px solid rgba(255,77,94,.45);border-radius:9px;
+    padding:10px 14px;margin-bottom:13px;display:none}
+  .banner.on{display:block}
+  .banner b{color:var(--bad)}
+  .banner ul{margin:7px 0 0;padding-left:18px;color:#ffc9cf;font-size:12.5px;line-height:1.75}
+  .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:13px;margin-bottom:13px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .card h2{margin:0 0 11px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .card h2 .hint{font-weight:400;color:var(--dim);font-size:11px}
+  .card h2 .right{margin-left:auto;display:flex;gap:6px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--dim);padding:4px 10px;font-size:11.5px}
+  .seg button.on{background:var(--accent);color:#04121c;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{color:var(--dim);font-weight:600;text-align:right;padding:7px 8px;
+    border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:6px 8px;border-bottom:1px solid #1b2637;text-align:right;
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  tbody tr:hover{background:#1a2434}
+  tr.bad td{color:#ffb3ba}
+  tr.bad td:first-child:before{content:"●";color:var(--bad);margin-right:6px;font-size:9px}
+  .bar{position:relative;background:#1d2a3c;height:5px;border-radius:3px;overflow:hidden;
+    min-width:56px;margin-top:3px}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:3px}
+  .bar i.w{background:var(--warn)}.bar i.b{background:var(--bad)}
+  .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tabs button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+    padding:6px 13px;border-radius:7px;font-size:12.5px}
+  .tabs button.on{background:rgba(53,194,240,.15);border-color:var(--accent);color:var(--accent);font-weight:700}
+  .scroll{max-height:420px;overflow:auto}
+  .scroll::-webkit-scrollbar{width:7px}.scroll::-webkit-scrollbar-thumb{background:#2a3a50;border-radius:4px}
+  .empty{color:var(--dim);text-align:center;padding:30px 0;font-size:13px}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:14px;display:flex;gap:16px;flex-wrap:wrap}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10.5px;background:#22304a;color:var(--dim)}
+  svg{display:block;width:100%;height:auto}
+  .lg{display:flex;gap:14px;font-size:11px;color:var(--dim);margin-top:6px}
+  .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+  .setrow{display:flex;align-items:center;gap:9px;margin:7px 0;font-size:12.5px;color:var(--dim);flex-wrap:wrap}
+  .setrow input{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:6px;padding:5px 8px;width:80px;font-family:inherit}
+  #setPanel{display:none;margin-bottom:13px}#setPanel.on{display:block}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+  .demoBadge{font-size:11px;font-weight:700;color:#ffb02e;background:rgba(255,176,46,.13);
+    border:1px solid rgba(255,176,46,.45);padding:3px 9px;border-radius:999px}
+  .back{color:var(--dim);text-decoration:none;font-size:12px;border-bottom:1px dotted #3a4c64}
+  .back:hover{color:var(--accent);border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>平衡块全检 <span>· IQC 看板</span></h1><span class="demoBadge">演示数据</span><a class="back" href="/">← mysqe</a>
+  <div class="tool"><span id="status">未加载数据</span></div>
+  <div class="spacer"></div>
+  <div class="tool">
+    <button class="btn p" id="btnPick">选择 CSV 文件</button>
+    <label style="margin-left:8px">日期</label>
+    <input type="date" id="date">
+    <button class="btn" id="btnSet">阈值</button>
+  </div>
+</header>
+
+<main>
+  <div id="drop">
+    <div class="big">把全检 CSV 拖到这里</div>
+    <div class="sub">或点击右上角「选择 CSV 文件」<br>
+      支持一次选多个文件；表头需含：时间、供应商、CODE、检查项目、生产数、不良数</div>
+    <div class="hint">本页面不联网、不上传任何数据，全部在你的电脑里计算。可直接用浏览器打开。</div>
+  </div>
+
+  <div id="dash" style="display:none">
+    <div class="kpis">
+      <div class="kpi"><div class="lab">当日生产数</div><div class="val" id="kProd">—</div>
+        <div class="sub" id="kRec">—</div></div>
+      <div class="kpi b"><div class="lab">当日不良数</div><div class="val" id="kDef">—</div>
+        <div class="sub">全检不良合计</div></div>
+      <div class="kpi w"><div class="lab">当日不良率</div><div class="val" id="kRate">—</div>
+        <div class="sub">不良数 ÷ 生产数</div></div>
+      <div class="kpi g"><div class="lab">超限时段</div><div class="val" id="kAlarm">—</div>
+        <div class="sub" id="kAlarmSub">未触发告警</div></div>
+    </div>
+
+    <div class="banner" id="banner"><b>⚠ 不良率超限告警</b><ul id="alertList"></ul></div>
+
+    <div id="setPanel" class="card">
+      <h2>告警阈值 <span class="hint">按「小时 + CODE + 检查项目 + 供应商」聚合后判断</span>
+        <span class="right"><button class="btn" id="btnSaveSet">保存</button></span></h2>
+      <div class="setrow">默认最大不良率 <input type="number" step="0.1" id="cRate"> % ／ 最小样本量
+        <input type="number" step="10" id="cMin"></div>
+      <div id="ovList"></div>
+      <div class="setrow" style="font-size:11.5px">样本量低于下限不告警，避免小样本误报。</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>不良率趋势 <span class="hint" id="chartHint"></span>
+          <span class="right"><div class="seg" id="segG">
+            <button data-g="hour" class="on">按小时</button>
+            <button data-g="day">按日</button></div></span></h2>
+        <div id="chart"></div>
+        <div class="lg"><span><i style="background:#2a3f5c"></i>生产数（右轴）</span>
+          <span><i style="background:#35c2f0"></i>不良率（左轴）</span>
+          <span><i style="background:#ff4d5e"></i>超限阈值</span></div>
+      </div>
+      <div class="card">
+        <h2>检查记录 <span class="hint">最新在上</span></h2>
+        <div class="scroll"><table>
+          <thead><tr><th>时间</th><th>供应商</th><th>CODE</th><th>检查项目</th>
+            <th>生产数</th><th>不良</th><th>不良率</th></tr></thead>
+          <tbody id="recent"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>分类统计 <span class="hint">点击表头排序</span></h2>
+      <div class="tabs" id="tabs">
+        <button data-d="supplier" class="on">供应商别</button>
+        <button data-d="code">CODE 别</button>
+        <button data-d="item">检查项目别</button>
+        <button data-d="date">日别</button>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr><th>名称</th><th>记录数</th><th>生产数</th><th>不良数</th><th>不良率</th></tr></thead>
+        <tbody id="dimBody"></tbody></table></div>
+    </div>
+
+    <div class="foot">
+      <span>已加载：<span id="fFiles">—</span></span>
+      <span>记录数：<span id="fRows">—</span></span>
+      <span>日期范围：<span id="fRange">—</span></span>
+      <span id="fLive"></span>
+    </div>
+  </div>
+</main>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const S = { rows:[], date:"", gran:"hour", dim:"supplier", sortKey:"defect", sortDir:-1,
+            limit:0.02, minSample:100, overrides:[], handles:[], timer:null };
+
+const fmt = n => (n==null? "—" : Number(n).toLocaleString("en-US"));
+const pct = r => (r==null? "—" : (r*100).toFixed(2)+"%");
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- CSV ---------- */
+const ALIAS = {
+  ts:["时间","检测时间","检查时间","日期时间","time","datetime","timestamp"],
+  supplier:["供应商","厂商","供方","supplier","vendor"],
+  code:["CODE","Code","code","料号","品号","部件号","型号"],
+  item:["检查项目","检验项目","项目","item","inspection_item"],
+  prod:["生产数","生产数量","产量","检验数","全检数","qty","prod","total"],
+  defect:["不良数","不良数量","不合格数","defect","ng"],
+  dtype:["不良项目","不良类型","不良现象","defect_type","ng_type"],
+  lot:["批次","LOT","lot","批号"]
+};
+
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text = text.slice(1);
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===','||c===';'||c==='\t'){ row.push(cur); cur=""; }
+    else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=""; }
+    else if(c!=='\r') cur+=c;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(x=>String(x).trim()!==""));
+}
+
+function norm(s){ return String(s||"").replace(/\s+/g,"").toLowerCase(); }
+
+function mapHeader(hdr){
+  const n=hdr.map(norm);
+  const pick=(names)=>{ for(const nm of names){ const k=n.indexOf(norm(nm)); if(k>=0) return k; } return -1; };
+  const m={};
+  for(const key in ALIAS) m[key]=pick(ALIAS[key]);
+  return m;
+}
+
+function parseTime(s){
+  s=String(s||"").trim().replace("T"," ");
+  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ ]+(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?)?/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  m=s.match(/^(\d{4})(\d{2})(\d{2})[ ]?(\d{2})?(\d{2})?(\d{2})?/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  const d=new Date(s);
+  return isNaN(d.getTime())? null : d;
+}
+
+function toInt(v){ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)? Math.round(n):0; }
+
+function ingest(text, fname){
+  const t=parseCSV(text);
+  if(t.length<2) return 0;
+  const m=mapHeader(t[0]);
+  if(m.ts<0||m.prod<0||m.defect<0){
+    console.warn("表头未识别:",t[0]);
+    return -1;
+  }
+  const out=[];
+  for(let i=1;i<t.length;i++){
+    const r=t[i];
+    const dt=parseTime(r[m.ts]);
+    if(!dt) continue;
+    const prod=toInt(r[m.prod]), def=toInt(r[m.defect]);
+    if(prod<=0&&def<=0) continue;
+    out.push({
+      ts:dt, day:dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"),
+      hour:dt.getHours(),
+      supplier:(m.supplier>=0? String(r[m.supplier]||"").trim():"")||"未标注",
+      code:(m.code>=0? String(r[m.code]||"").trim():"")||"未标注",
+      item:(m.item>=0? String(r[m.item]||"").trim():"")||"未标注",
+      prod, defect:def,
+      dtype:(m.dtype>=0? String(r[m.dtype]||"").trim():""),
+      lot:(m.lot>=0? String(r[m.lot]||"").trim():""),
+      src:fname
+    });
+  }
+  S.rows=S.rows.concat(out);
+  return out.length;
+}
+
+/* ---------- 聚合 ---------- */
+const rate=(d,p)=> p? d/p : 0;
+
+function days(){ return [...new Set(S.rows.map(r=>r.day))].sort().reverse(); }
+
+function summary(){
+  const rs=S.rows.filter(r=>r.day===S.date);
+  const p=rs.reduce((a,r)=>a+r.prod,0), d=rs.reduce((a,r)=>a+r.defect,0);
+  return {prod:p, defect:d, records:rs.length, rate:rate(d,p)};
+}
+
+function series(){
+  const rs=S.rows.filter(r=>S.gran==="hour"? r.day===S.date : true);
+  const key=r=> S.gran==="hour"? r.hour : r.day;
+  const map=new Map();
+  rs.forEach(r=>{
+    const k=key(r); if(!map.has(k)) map.set(k,{prod:0,defect:0});
+    const o=map.get(k); o.prod+=r.prod; o.defect+=r.defect;
+  });
+  let keys=[...map.keys()].sort((a,b)=>a-b);
+  if(S.gran==="day") keys=keys.slice(-30);
+  return keys.map(k=>({k: S.gran==="hour"? String(k).padStart(2,"0")+":00" : k,
+    ...map.get(k), rate: rate(map.get(k).defect, map.get(k).prod)}));
+}
+
+function dim(){
+  const col = {supplier:"supplier",code:"code",item:"item",date:"day"}[S.dim];
+  const rs = S.dim==="date"? S.rows : S.rows.filter(r=>r.day===S.date);
+  const map=new Map();
+  rs.forEach(r=>{
+    const k=r[col]; if(!map.has(k)) map.set(k,{prod:0,defect:0,count:0});
+    const o=map.get(k); o.prod+=r.prod; o.defect+=r.defect; o.count++;
+  });
+  return [...map.entries()].map(([k,o])=>({k, ...o, rate: rate(o.defect,o.prod)}));
+}
+
+function thrFor(code,item){
+  const o=S.overrides.find(x=> (!x.code||x.code===code) && (!x.item||x.item===item));
+  return o? {rate:o.max_rate, min:o.min_sample, ov:true} : {rate:S.limit, min:S.minSample, ov:false};
+}
+
+function alerts(){
+  const rs=S.rows.filter(r=>r.day===S.date);
+  const map=new Map();
+  rs.forEach(r=>{
+    const k=[r.hour,r.code,r.item,r.supplier].join("|");
+    if(!map.has(k)) map.set(k,{hour:r.hour,code:r.code,item:r.item,supplier:r.supplier,prod:0,defect:0});
+    const o=map.get(k); o.prod+=r.prod; o.defect+=r.defect;
+  });
+  const out=[];
+  map.forEach(o=>{
+    const t=thrFor(o.code,o.item);
+    if(o.prod<t.min) return;
+    const rt=rate(o.defect,o.prod);
+    if(rt>t.rate) out.push({...o, rate:rt, limit:t.rate, over:rt-t.rate,
+      hour:String(o.hour).padStart(2,"0")+":00"});
+  });
+  return out.sort((a,b)=> b.rate-a.rate);
+}
+
+/* ---------- 图表 ---------- */
+function drawChart(rows, limit, alertHours){
+  const W=820,H=270,pad={l:54,r:60,t:18,b:34}, iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
+  if(!rows.length){ $("#chart").innerHTML='<div class="empty">该时段暂无数据</div>'; return; }
+  const maxP=Math.max(1,...rows.map(r=>r.prod));
+  const maxR=Math.max(0.005,...rows.map(r=>r.rate),limit||0)*1.25;
+  const n=rows.length, bw=Math.min(46, iw/n*0.55);
+  const x=i=> pad.l + (n===1? iw/2 : iw*i/(n-1));
+  const yR=v=> pad.t + ih*(1-v/maxR), yP=v=> pad.t + ih*(1-v/maxP);
+
+  let grid="",lab="",rlab="";
+  for(let k=0;k<=4;k++){
+    const y=pad.t+ih*k/4;
+    grid+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#1e2b3d"/>`;
+    lab+=`<text x="${pad.l-8}" y="${y+4}" fill="#8fa2ba" font-size="10" text-anchor="end">${((maxR*(1-k/4))*100).toFixed(1)}%</text>`;
+    rlab+=`<text x="${W-pad.r+8}" y="${y+4}" fill="#7d8ea6" font-size="10">${Math.round(maxP*(1-k/4)).toLocaleString("en-US")}</text>`;
+  }
+  const step=Math.ceil(n/12);
+  let xlab="";
+  rows.forEach((r,i)=>{ if(i%step===0||i===n-1)
+    xlab+=`<text x="${x(i)}" y="${H-12}" fill="#8fa2ba" font-size="10" text-anchor="middle">${esc(r.k)}</text>`;});
+
+  let bars="",bands="";
+  rows.forEach((r,i)=>{
+    const h=r.prod? Math.max(2,ih*r.prod/maxP):0;
+    const over = alertHours && alertHours.has(r.k);
+    if(over) bands+=`<rect x="${x(i)-bw/2-3}" y="${pad.t}" width="${bw+6}" height="${ih}"
+      fill="rgba(255,77,94,.10)" stroke="rgba(255,77,94,.35)" stroke-width=".8" rx="3"/>`;
+    bars+=`<rect x="${x(i)-bw/2}" y="${pad.t+ih-h}" width="${bw}" height="${h}" rx="2"
+      fill="${over?"#4a2833":"#2a3f5c"}"/>`;
+  });
+
+  const yv=r=>yR(Math.min(r.rate,maxR));
+  const pts=rows.map((r,i)=>`${x(i)},${yv(r)}`).join(" ");
+  const area=`M ${pad.l} ${pad.t+ih} L `+rows.map((r,i)=>`${x(i)} ${yv(r)}`).join(" L ")+` L ${x(n-1)} ${pad.t+ih} Z`;
+
+  let lim="";
+  if(limit){
+    lim=`<rect x="${pad.l}" y="${pad.t}" width="${iw}" height="${Math.max(0,yR(limit)-pad.t)}" fill="rgba(255,77,94,.05)"/>
+      <line x1="${pad.l}" y1="${yR(limit)}" x2="${W-pad.r}" y2="${yR(limit)}" stroke="#ff4d5e"
+        stroke-dasharray="6 4" stroke-width="1.8"/>
+      <text x="${pad.l+4}" y="${yR(limit)-5}" fill="#ff8b96" font-size="10.5" font-weight="600">阈值 ${(limit*100).toFixed(1)}%</text>`;
+  }
+  const dots=rows.map((r,i)=> (alertHours&&alertHours.has(r.k))
+    ? `<circle cx="${x(i)}" cy="${yv(r)}" r="4.2" fill="#ff4d5e" stroke="#0d1420" stroke-width="1.5"/>`
+    : `<circle cx="${x(i)}" cy="${yv(r)}" r="2.4" fill="#35c2f0"/>`).join("");
+
+  $("#chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#35c2f0" stop-opacity=".28"/>
+      <stop offset="100%" stop-color="#35c2f0" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${lab}${rlab}${bands}${xlab}${bars}
+    <path d="${area}" fill="url(#ag)"/>
+    <polyline points="${pts}" fill="none" stroke="#35c2f0" stroke-width="2" stroke-linejoin="round"/>
+    ${dots}${lim}
+    <text x="${pad.l}" y="${pad.t-5}" fill="#8fa2ba" font-size="9.5">不良率</text>
+    <text x="${W-pad.r}" y="${pad.t-5}" fill="#5f7186" font-size="9.5" text-anchor="end">生产数</text>
+  </svg>`;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  const s=summary(), a=alerts();
+  $("#kProd").textContent=fmt(s.prod);
+  $("#kRec").textContent=s.records? fmt(s.records)+" 条记录":"暂无记录";
+  $("#kDef").textContent=fmt(s.defect);
+  $("#kRate").textContent=pct(s.rate);
+  $("#kRate").style.color = s.rate>0.02?"var(--bad)":(s.rate>0.01?"var(--warn)":"var(--txt)");
+  $("#kAlarm").textContent=a.length;
+  $("#kAlarm").style.color = a.length?"var(--bad)":"var(--ok)";
+  $("#kAlarmSub").textContent = a.length?"需要立即处理":"未触发告警";
+
+  const b=$("#banner");
+  if(a.length){
+    b.classList.add("on");
+    $("#alertList").innerHTML=a.slice(0,8).map(x=>
+      `<li>${esc(x.hour)} · <b>${esc(x.code)} / ${esc(x.item)}</b> · ${esc(x.supplier)}
+       　不良率 <b>${pct(x.rate)}</b> 超限 ${pct(x.limit)}（${fmt(x.defect)}/${fmt(x.prod)}）</li>`).join("");
+  } else { b.classList.remove("on"); $("#alertList").innerHTML=""; }
+
+  const badHours=new Set(a.map(x=>x.hour));
+  drawChart(series(), a.length? a[0].limit : S.limit, badHours);
+  $("#chartHint").textContent = S.gran==="hour"? "当日各小时":"近 30 天";
+
+  const rs=S.rows.filter(r=>r.day===S.date).sort((p,q)=> q.ts-p.ts).slice(0,40);
+  if(!rs.length){ $("#recent").innerHTML='<tr><td colspan="7"><div class="empty">该日期暂无记录</div></td></tr>'; }
+  else{
+    const badKey=new Set(a.map(x=>x.code+"|"+x.item+"|"+x.supplier));
+    $("#recent").innerHTML=rs.map(r=>{
+      const rt=rate(r.defect,r.prod);
+      const hit=r.defect>0 && badKey.has(r.code+"|"+r.item+"|"+r.supplier) &&
+                badHours.has(String(r.hour).padStart(2,"0")+":00");
+      return `<tr class="${hit?"bad":""}"><td>${esc(String(r.hour).padStart(2,"0")+":"+String(r.ts.getMinutes()).padStart(2,"0"))}</td>
+        <td>${esc(r.supplier)}</td><td>${esc(r.code)}</td><td>${esc(r.item)}</td>
+        <td>${fmt(r.prod)}</td><td>${fmt(r.defect)}</td><td>${pct(rt)}</td></tr>`;
+    }).join("");
+  }
+
+  const d=dim();
+  const k=S.sortKey, dir=S.sortDir;
+  d.sort((x,y)=> (x[k]>y[k]?1:x[k]<y[k]?-1:0)*dir);
+  const maxR=Math.max(0.001,...d.map(r=>r.rate));
+  $("#dimBody").innerHTML = d.length? d.map(r=>{
+    const w=Math.min(100,r.rate/maxR*100);
+    const cls=r.rate>0.02?"b":(r.rate>0.01?"w":"");
+    return `<tr><td>${esc(r.k)}</td><td>${fmt(r.count)}</td><td>${fmt(r.prod)}</td>
+      <td>${fmt(r.defect)}</td><td>${pct(r.rate)}<div class="bar"><i class="${cls}" style="width:${w}%"></i></div></td></tr>`;
+  }).join("") : '<tr><td colspan="5"><div class="empty">暂无数据</div></td></tr>';
+
+  const ds=days();
+  $("#fRange").textContent = ds.length? (ds[ds.length-1]+" ~ "+ds[0]) : "—";
+  $("#fRows").textContent = fmt(S.rows.length);
+}
+
+function refresh(){
+  if(!S.rows.length) return;
+  const ds=days();
+  if(!S.date || !ds.includes(S.date)) S.date = ds[0];
+  $("#date").value=S.date;
+  $("#dash").style.display="";
+  $("#drop").style.display="none";
+  $("#status").textContent = "已加载 "+fmt(S.rows.length)+" 条记录";
+  render();
+}
+
+/* ---------- 文件载入 ---------- */
+function addFiles(files){
+  S.rows=[];                     // 每次载入都是全新一批，避免重复累加
+  let ok=0, bad=[];
+  let pending=files.length;
+  Array.from(files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const n=ingest(r.result, f.name);
+      if(n<0) bad.push(f.name); else ok+=n;
+      if(--pending===0){
+        const ds=days();
+        $("#fFiles").textContent = files.length + " 个文件";
+        if(ok===0 && bad.length) alert("表头没认出来：\n"+bad.join("\n")+
+          "\n\n需要包含：时间、供应商、CODE、检查项目、生产数、不良数");
+        refresh();
+      }
+    };
+    r.readAsText(f, "utf-8");
+  });
+}
+
+$("#btnPick").addEventListener("click", async ()=>{
+  if(window.showOpenFilePicker){
+    try{
+      const hs=await window.showOpenFilePicker({multiple:true,
+        types:[{description:"CSV",accept:{"text/csv":[".csv"]}}]});
+      S.handles=hs;
+      const fs=[];
+      for(const h of hs){ fs.push(await h.getFile()); }
+      addFiles(fs);
+      startLive();
+      return;
+    }catch(e){ if(e.name!=="AbortError") console.warn(e); }
+  }
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept=".csv,text/csv"; inp.multiple=true;
+  inp.onchange=()=>addFiles(inp.files);
+  inp.click();
+});
+
+function startLive(){
+  if(S.timer) clearInterval(S.timer);
+  if(!S.handles.length) return;
+  $("#fLive").textContent="自动重读：5 秒";
+  S.timer=setInterval(async ()=>{
+    try{
+      const files=[];
+      for(const h of S.handles) files.push(await h.getFile());
+      S.rows=[]; addFiles(files);
+    }catch(e){}
+  }, 5000);
+}
+
+/* 拖拽 */
+const drop=$("#drop");
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.add("on");
+}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{
+  e.preventDefault(); if(ev==="drop"||e.target===document.body) drop.classList.remove("on");
+}));
+document.addEventListener("drop", e=>{
+  e.preventDefault();
+  if(e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+
+/* 控件 */
+$("#date").addEventListener("change", e=>{ S.date=e.target.value; render(); });
+document.querySelectorAll("#segG button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#segG button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); S.gran=b.dataset.g; render();
+}));
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); S.dim=b.dataset.d; render();
+}));
+document.querySelectorAll("th").forEach(th=>th.addEventListener("click",()=>{
+  const map={"名称":"k","记录数":"count","生产数":"prod","不良数":"defect","不良率":"rate"};
+  const k=map[th.textContent.trim()]; if(!k) return;
+  if(S.sortKey===k) S.sortDir*=-1; else { S.sortKey=k; S.sortDir=-1; }
+  render();
+}));
+
+/* 阈值 */
+$("#btnSet").addEventListener("click",()=>$("#setPanel").classList.toggle("on"));
+
+function renderOv(){
+  const box=$("#ovList");
+  if(!S.overrides.length){ box.innerHTML='<div class="setrow">暂无覆盖规则（全部用默认阈值）</div>'; return; }
+  box.innerHTML=S.overrides.map((o,i)=>`
+    <div class="setrow"><span class="pill">规则 ${i+1}</span>
+      CODE <input value="${esc(o.code||"")}" data-i="${i}" data-f="code" placeholder="全部" style="width:105px">
+      项目 <input value="${esc(o.item||"")}" data-i="${i}" data-f="item" placeholder="全部" style="width:105px">
+      阈值 <input type="number" step="0.1" value="${(o.max_rate*100).toFixed(2)}" data-i="${i}" data-f="rate"> %
+      样本≥ <input type="number" step="10" value="${o.min_sample}" data-i="${i}" data-f="min">
+      <button class="btn" data-del="${i}" style="padding:3px 9px">删除</button></div>`).join("")+
+    '<div class="setrow"><button class="btn" id="btnAddOv">+ 新增规则</button></div>';
+
+  box.querySelectorAll("input[data-f]").forEach(inp=>inp.addEventListener("input",()=>{
+    const i=+inp.dataset.i, f=inp.dataset.f;
+    if(f==="rate") S.overrides[i].max_rate=Number(inp.value)/100;
+    else if(f==="min") S.overrides[i].min_sample=parseInt(inp.value||"0");
+    else S.overrides[i][f]=inp.value;
+  }));
+  box.querySelectorAll("button[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    S.overrides.splice(+b.dataset.del,1); renderOv();
+  }));
+  const add=$("#btnAddOv");
+  if(add) add.addEventListener("click",()=>{ S.overrides.push({code:"",item:"",max_rate:0.015,min_sample:200}); renderOv(); });
+}
+
+$("#btnSaveSet").addEventListener("click",()=>{
+  S.limit=Number($("#cRate").value||2)/100;
+  S.minSample=parseInt($("#cMin").value||"100");
+  $("#btnSaveSet").textContent="已保存";
+  setTimeout(()=>$("#btnSaveSet").textContent="保存",1200);
+  render();
+});
+
+$("#cRate").value="2"; $("#cMin").value="100"; renderOv();
+
+/* ===== 演示数据（合成，非真实产线数据）===== */
+const DEMO_CSV = "时间,供应商,CODE,检查项目,生产数,不良数,不良项目,批次\n2026-11-08 08:08:00,苏州精工,BW-001,重量,319,0,,LOT1108\n2026-11-08 08:06:00,苏州精工,BW-001,外观,328,2,气孔,LOT1108\n2026-11-08 08:31:00,苏州精工,BW-001,孔位度,338,0,,LOT1108\n2026-11-08 08:05:00,苏州精工,BW-001,涂层厚度,387,2,膜厚不足,LOT1108\n2026-11-08 08:47:00,苏州精工,BW-002,重量,410,1,偏轻,LOT1108\n2026-11-08 08:12:00,苏州精工,BW-002,外观,353,1,划伤,LOT1108\n2026-11-08 08:08:00,苏州精工,BW-002,孔位度,424,3,位置偏移,LOT1108\n2026-11-08 08:05:00,苏州精工,BW-002,涂层厚度,366,1,局部脱落,LOT1108\n2026-11-08 08:42:00,苏州精工,BW-003,重量,322,2,超重,LOT1108\n2026-11-08 08:58:00,苏州精工,BW-003,外观,374,3,气孔,LOT1108\n2026-11-08 08:17:00,苏州精工,BW-003,孔位度,398,2,孔径超差,LOT1108\n2026-11-08 08:20:00,苏州精工,BW-003,涂层厚度,341,1,局部脱落,LOT1108\n2026-11-08 08:24:00,宁波恒达,BW-001,重量,413,3,超重,LOT1108\n2026-11-08 08:50:00,宁波恒达,BW-001,外观,418,4,气孔,LOT1108\n2026-11-08 08:38:00,宁波恒达,BW-001,孔位度,410,2,位置偏移,LOT1108\n2026-11-08 08:24:00,宁波恒达,BW-001,涂层厚度,356,0,,LOT1108\n2026-11-08 08:39:00,宁波恒达,BW-002,重量,426,1,超重,LOT1108\n2026-11-08 08:14:00,宁波恒达,BW-002,外观,355,2,划伤,LOT1108\n2026-11-08 08:51:00,宁波恒达,BW-002,孔位度,346,2,孔径超差,LOT1108\n2026-11-08 08:17:00,宁波恒达,BW-002,涂层厚度,372,1,膜厚不足,LOT1108\n2026-11-08 08:55:00,宁波恒达,BW-003,重量,417,2,超重,LOT1108\n2026-11-08 08:24:00,宁波恒达,BW-003,外观,442,3,气孔,LOT1108\n2026-11-08 08:44:00,宁波恒达,BW-003,孔位度,463,3,位置偏移,LOT1108\n2026-11-08 08:22:00,宁波恒达,BW-003,涂层厚度,447,3,局部脱落,LOT1108\n2026-11-08 08:04:00,青岛金属,BW-001,重量,432,2,超重,LOT1108\n2026-11-08 08:22:00,青岛金属,BW-001,外观,389,2,气孔,LOT1108\n2026-11-08 08:18:00,青岛金属,BW-001,孔位度,481,1,孔径超差,LOT1108\n2026-11-08 08:08:00,青岛金属,BW-001,涂层厚度,375,2,局部脱落,LOT1108\n2026-11-08 08:14:00,青岛金属,BW-002,重量,436,1,超重,LOT1108\n2026-11-08 08:50:00,青岛金属,BW-002,外观,433,2,气孔,LOT1108\n2026-11-08 08:22:00,青岛金属,BW-002,孔位度,454,1,位置偏移,LOT1108\n2026-11-08 08:08:00,青岛金属,BW-002,涂层厚度,428,2,局部脱落,LOT1108\n2026-11-08 08:10:00,青岛金属,BW-003,重量,485,3,偏轻,LOT1108\n2026-11-08 08:13:00,青岛金属,BW-003,外观,458,2,划伤,LOT1108\n2026-11-08 08:11:00,青岛金属,BW-003,孔位度,483,3,孔径超差,LOT1108\n2026-11-08 08:09:00,青岛金属,BW-003,涂层厚度,505,4,膜厚不足,LOT1108\n2026-11-08 09:25:00,苏州精工,BW-001,重量,308,2,偏轻,LOT1108\n2026-11-08 09:20:00,苏州精工,BW-001,外观,306,0,,LOT1108\n2026-11-08 09:10:00,苏州精工,BW-001,孔位度,315,2,位置偏移,LOT1108\n2026-11-08 09:10:00,苏州精工,BW-001,涂层厚度,343,1,局部脱落,LOT1108\n2026-11-08 09:18:00,苏州精工,BW-002,重量,393,3,偏轻,LOT1108\n2026-11-08 09:24:00,苏州精工,BW-002,外观,345,2,划伤,LOT1108\n2026-11-08 09:10:00,苏州精工,BW-002,孔位度,332,1,位置偏移,LOT1108\n2026-11-08 09:46:00,苏州精工,BW-002,涂层厚度,347,3,局部脱落,LOT1108\n2026-11-08 09:01:00,苏州精工,BW-003,重量,435,3,超重,LOT1108\n2026-11-08 09:53:00,苏州精工,BW-003,外观,350,2,划伤,LOT1108\n2026-11-08 09:06:00,苏州精工,BW-003,孔位度,346,2,孔径超差,LOT1108\n2026-11-08 09:32:00,苏州精工,BW-003,涂层厚度,403,2,膜厚不足,LOT1108\n2026-11-08 09:18:00,宁波恒达,BW-001,重量,360,3,偏轻,LOT1108\n2026-11-08 09:10:00,宁波恒达,BW-001,外观,345,2,气孔,LOT1108\n2026-11-08 09:32:00,宁波恒达,BW-001,孔位度,437,4,孔径超差,LOT1108\n2026-11-08 09:31:00,宁波恒达,BW-001,涂层厚度,349,1,膜厚不足,LOT1108\n2026-11-08 09:11:00,宁波恒达,BW-002,重量,396,2,超重,LOT1108\n2026-11-08 09:51:00,宁波恒达,BW-002,外观,450,1,气孔,LOT1108\n2026-11-08 09:02:00,宁波恒达,BW-002,孔位度,423,3,孔径超差,LOT1108\n2026-11-08 09:58:00,宁波恒达,BW-002,涂层厚度,393,2,膜厚不足,LOT1108\n2026-11-08 09:25:00,宁波恒达,BW-003,重量,365,1,超重,LOT1108\n2026-11-08 09:22:00,宁波恒达,BW-003,外观,392,2,气孔,LOT1108\n2026-11-08 09:43:00,宁波恒达,BW-003,孔位度,439,4,位置偏移,LOT1108\n2026-11-08 09:47:00,宁波恒达,BW-003,涂层厚度,465,4,膜厚不足,LOT1108\n2026-11-08 09:12:00,青岛金属,BW-001,重量,486,2,超重,LOT1108\n2026-11-08 09:10:00,青岛金属,BW-001,外观,364,2,划伤,LOT1108\n2026-11-08 09:09:00,青岛金属,BW-001,孔位度,364,1,位置偏移,LOT1108\n2026-11-08 09:22:00,青岛金属,BW-001,涂层厚度,411,3,膜厚不足,LOT1108\n2026-11-08 09:29:00,青岛金属,BW-002,重量,471,1,偏轻,LOT1108\n2026-11-08 09:05:00,青岛金属,BW-002,外观,385,3,划伤,LOT1108\n2026-11-08 09:58:00,青岛金属,BW-002,孔位度,388,1,孔径超差,LOT1108\n2026-11-08 09:16:00,青岛金属,BW-002,涂层厚度,479,3,膜厚不足,LOT1108\n2026-11-08 09:11:00,青岛金属,BW-003,重量,406,3,偏轻,LOT1108\n2026-11-08 09:34:00,青岛金属,BW-003,外观,492,2,气孔,LOT1108\n2026-11-08 09:34:00,青岛金属,BW-003,孔位度,448,4,位置偏移,LOT1108\n2026-11-08 09:36:00,青岛金属,BW-003,涂层厚度,499,2,膜厚不足,LOT1108\n2026-11-08 10:32:00,苏州精工,BW-001,重量,290,3,偏轻,LOT1108\n2026-11-08 10:50:00,苏州精工,BW-001,外观,347,3,气孔,LOT1108\n2026-11-08 10:16:00,苏州精工,BW-001,孔位度,340,1,位置偏移,LOT1108\n2026-11-08 10:13:00,苏州精工,BW-001,涂层厚度,374,3,膜厚不足,LOT1108\n2026-11-08 10:55:00,苏州精工,BW-002,重量,349,2,超重,LOT1108\n2026-11-08 10:10:00,苏州精工,BW-002,外观,400,1,划伤,LOT1108\n2026-11-08 10:45:00,苏州精工,BW-002,孔位度,419,3,孔径超差,LOT1108\n2026-11-08 10:44:00,苏州精工,BW-002,涂层厚度,300,1,局部脱落,LOT1108\n2026-11-08 10:47:00,苏州精工,BW-003,重量,368,3,超重,LOT1108\n2026-11-08 10:50:00,苏州精工,BW-003,外观,353,1,划伤,LOT1108\n2026-11-08 10:20:00,苏州精工,BW-003,孔位度,333,2,孔径超差,LOT1108\n2026-11-08 10:36:00,苏州精工,BW-003,涂层厚度,448,3,局部脱落,LOT1108\n2026-11-08 10:05:00,宁波恒达,BW-001,重量,331,3,偏轻,LOT1108\n2026-11-08 10:33:00,宁波恒达,BW-001,外观,350,1,气孔,LOT1108\n2026-11-08 10:29:00,宁波恒达,BW-001,孔位度,386,2,位置偏移,LOT1108\n2026-11-08 10:58:00,宁波恒达,BW-001,涂层厚度,368,3,膜厚不足,LOT1108\n2026-11-08 10:21:00,宁波恒达,BW-002,重量,367,3,超重,LOT1108\n2026-11-08 10:27:00,宁波恒达,BW-002,外观,391,2,气孔,LOT1108\n2026-11-08 10:30:00,宁波恒达,BW-002,孔位度,355,2,位置偏移,LOT1108\n2026-11-08 10:12:00,宁波恒达,BW-002,涂层厚度,461,4,局部脱落,LOT1108\n2026-11-08 10:17:00,宁波恒达,BW-003,重量,394,3,超重,LOT1108\n2026-11-08 10:49:00,宁波恒达,BW-003,外观,375,1,气孔,LOT1108\n2026-11-08 10:59:00,宁波恒达,BW-003,孔位度,418,3,孔径超差,LOT1108\n2026-11-08 10:45:00,宁波恒达,BW-003,涂层厚度,417,1,局部脱落,LOT1108\n2026-11-08 10:52:00,青岛金属,BW-001,重量,365,3,偏轻,LOT1108\n2026-11-08 10:41:00,青岛金属,BW-001,外观,412,3,气孔,LOT1108\n2026-11-08 10:44:00,青岛金属,BW-001,孔位度,457,4,位置偏移,LOT1108\n2026-11-08 10:22:00,青岛金属,BW-001,涂层厚度,474,3,局部脱落,LOT1108\n2026-11-08 10:49:00,青岛金属,BW-002,重量,483,2,超重,LOT1108\n2026-11-08 10:00:00,青岛金属,BW-002,外观,409,1,划伤,LOT1108\n2026-11-08 10:21:00,青岛金属,BW-002,孔位度,410,2,孔径超差,LOT1108\n2026-11-08 10:59:00,青岛金属,BW-002,涂层厚度,380,3,局部脱落,LOT1108\n2026-11-08 10:23:00,青岛金属,BW-003,重量,401,2,超重,LOT1108\n2026-11-08 10:50:00,青岛金属,BW-003,外观,450,1,气孔,LOT1108\n2026-11-08 10:27:00,青岛金属,BW-003,孔位度,465,1,孔径超差,LOT1108\n2026-11-08 10:24:00,青岛金属,BW-003,涂层厚度,443,3,膜厚不足,LOT1108\n2026-11-08 11:05:00,苏州精工,BW-001,重量,321,3,超重,LOT1108\n2026-11-08 11:30:00,苏州精工,BW-001,外观,315,1,划伤,LOT1108\n2026-11-08 11:10:00,苏州精工,BW-001,孔位度,318,2,孔径超差,LOT1108\n2026-11-08 11:50:00,苏州精工,BW-001,涂层厚度,383,3,膜厚不足,LOT1108\n2026-11-08 11:22:00,苏州精工,BW-002,重量,412,3,偏轻,LOT1108\n2026-11-08 11:20:00,苏州精工,BW-002,外观,332,1,划伤,LOT1108\n2026-11-08 11:23:00,苏州精工,BW-002,孔位度,326,1,孔径超差,LOT1108\n2026-11-08 11:10:00,苏州精工,BW-002,涂层厚度,375,3,膜厚不足,LOT1108\n2026-11-08 11:38:00,苏州精工,BW-003,重量,328,2,超重,LOT1108\n2026-11-08 11:58:00,苏州精工,BW-003,外观,425,2,气孔,LOT1108\n2026-11-08 11:12:00,苏州精工,BW-003,孔位度,355,1,孔径超差,LOT1108\n2026-11-08 11:33:00,苏州精工,BW-003,涂层厚度,374,1,膜厚不足,LOT1108\n2026-11-08 11:37:00,宁波恒达,BW-001,重量,411,1,超重,LOT1108\n2026-11-08 11:35:00,宁波恒达,BW-001,外观,402,4,划伤,LOT1108\n2026-11-08 11:39:00,宁波恒达,BW-001,孔位度,367,3,孔径超差,LOT1108\n2026-11-08 11:40:00,宁波恒达,BW-001,涂层厚度,398,1,膜厚不足,LOT1108\n2026-11-08 11:31:00,宁波恒达,BW-002,重量,388,3,偏轻,LOT1108\n2026-11-08 11:18:00,宁波恒达,BW-002,外观,426,0,,LOT1108\n2026-11-08 11:00:00,宁波恒达,BW-002,孔位度,468,4,位置偏移,LOT1108\n2026-11-08 11:52:00,宁波恒达,BW-002,涂层厚度,360,2,膜厚不足,LOT1108\n2026-11-08 11:15:00,宁波恒达,BW-003,重量,469,1,超重,LOT1108\n2026-11-08 11:00:00,宁波恒达,BW-003,外观,396,0,,LOT1108\n2026-11-08 11:30:00,宁波恒达,BW-003,孔位度,366,2,位置偏移,LOT1108\n2026-11-08 11:09:00,宁波恒达,BW-003,涂层厚度,457,3,膜厚不足,LOT1108\n2026-11-08 11:50:00,青岛金属,BW-001,重量,390,1,超重,LOT1108\n2026-11-08 11:57:00,青岛金属,BW-001,外观,490,3,划伤,LOT1108\n2026-11-08 11:12:00,青岛金属,BW-001,孔位度,490,3,孔径超差,LOT1108\n2026-11-08 11:59:00,青岛金属,BW-001,涂层厚度,457,3,局部脱落,LOT1108\n2026-11-08 11:40:00,青岛金属,BW-002,重量,506,2,超重,LOT1108\n2026-11-08 11:23:00,青岛金属,BW-002,外观,487,2,气孔,LOT1108\n2026-11-08 11:26:00,青岛金属,BW-002,孔位度,508,1,孔径超差,LOT1108\n2026-11-08 11:58:00,青岛金属,BW-002,涂层厚度,484,2,局部脱落,LOT1108\n2026-11-08 11:23:00,青岛金属,BW-003,重量,526,1,超重,LOT1108\n2026-11-08 11:38:00,青岛金属,BW-003,外观,464,1,划伤,LOT1108\n2026-11-08 11:38:00,青岛金属,BW-003,孔位度,421,1,位置偏移,LOT1108\n2026-11-08 11:26:00,青岛金属,BW-003,涂层厚度,521,3,局部脱落,LOT1108\n2026-11-08 12:09:00,苏州精工,BW-001,重量,300,1,超重,LOT1108\n2026-11-08 12:03:00,苏州精工,BW-001,外观,323,1,气孔,LOT1108\n2026-11-08 12:19:00,苏州精工,BW-001,孔位度,400,2,孔径超差,LOT1108\n2026-11-08 12:15:00,苏州精工,BW-001,涂层厚度,325,1,局部脱落,LOT1108\n2026-11-08 12:59:00,苏州精工,BW-002,重量,351,2,超重,LOT1108\n2026-11-08 12:35:00,苏州精工,BW-002,外观,349,1,划伤,LOT1108\n2026-11-08 12:22:00,苏州精工,BW-002,孔位度,387,1,位置偏移,LOT1108\n2026-11-08 12:26:00,苏州精工,BW-002,涂层厚度,383,2,局部脱落,LOT1108\n2026-11-08 12:06:00,苏州精工,BW-003,重量,401,1,偏轻,LOT1108\n2026-11-08 12:10:00,苏州精工,BW-003,外观,377,3,划伤,LOT1108\n2026-11-08 12:34:00,苏州精工,BW-003,孔位度,342,1,位置偏移,LOT1108\n2026-11-08 12:53:00,苏州精工,BW-003,涂层厚度,400,3,膜厚不足,LOT1108\n2026-11-08 12:12:00,宁波恒达,BW-001,重量,437,1,偏轻,LOT1108\n2026-11-08 12:34:00,宁波恒达,BW-001,外观,398,3,划伤,LOT1108\n2026-11-08 12:45:00,宁波恒达,BW-001,孔位度,423,2,孔径超差,LOT1108\n2026-11-08 12:41:00,宁波恒达,BW-001,涂层厚度,400,2,局部脱落,LOT1108\n2026-11-08 12:54:00,宁波恒达,BW-002,重量,364,1,超重,LOT1108\n2026-11-08 12:51:00,宁波恒达,BW-002,外观,464,3,划伤,LOT1108\n2026-11-08 12:30:00,宁波恒达,BW-002,孔位度,382,3,孔径超差,LOT1108\n2026-11-08 12:38:00,宁波恒达,BW-002,涂层厚度,453,2,膜厚不足,LOT1108\n2026-11-08 12:56:00,宁波恒达,BW-003,重量,438,2,超重,LOT1108\n2026-11-08 12:32:00,宁波恒达,BW-003,外观,416,3,划伤,LOT1108\n2026-11-08 12:03:00,宁波恒达,BW-003,孔位度,458,2,孔径超差,LOT1108\n2026-11-08 12:15:00,宁波恒达,BW-003,涂层厚度,462,4,膜厚不足,LOT1108\n2026-11-08 12:28:00,青岛金属,BW-001,重量,434,2,偏轻,LOT1108\n2026-11-08 12:28:00,青岛金属,BW-001,外观,485,4,划伤,LOT1108\n2026-11-08 12:22:00,青岛金属,BW-001,孔位度,385,1,位置偏移,LOT1108\n2026-11-08 12:34:00,青岛金属,BW-001,涂层厚度,412,3,局部脱落,LOT1108\n2026-11-08 12:21:00,青岛金属,BW-002,重量,393,1,超重,LOT1108\n2026-11-08 12:44:00,青岛金属,BW-002,外观,456,1,划伤,LOT1108\n2026-11-08 12:20:00,青岛金属,BW-002,孔位度,461,2,位置偏移,LOT1108\n2026-11-08 12:31:00,青岛金属,BW-002,涂层厚度,479,1,局部脱落,LOT1108\n2026-11-08 12:44:00,青岛金属,BW-003,重量,492,4,偏轻,LOT1108\n2026-11-08 12:36:00,青岛金属,BW-003,外观,427,4,划伤,LOT1108\n2026-11-08 12:21:00,青岛金属,BW-003,孔位度,471,1,位置偏移,LOT1108\n2026-11-08 12:44:00,青岛金属,BW-003,涂层厚度,449,1,膜厚不足,LOT1108\n2026-11-08 13:26:00,苏州精工,BW-001,重量,304,2,偏轻,LOT1108\n2026-11-08 13:40:00,苏州精工,BW-001,外观,345,2,划伤,LOT1108\n2026-11-08 13:18:00,苏州精工,BW-001,孔位度,353,1,位置偏移,LOT1108\n2026-11-08 13:02:00,苏州精工,BW-001,涂层厚度,400,1,局部脱落,LOT1108\n2026-11-08 13:06:00,苏州精工,BW-002,重量,375,1,偏轻,LOT1108\n2026-11-08 13:48:00,苏州精工,BW-002,外观,363,2,气孔,LOT1108\n2026-11-08 13:20:00,苏州精工,BW-002,孔位度,362,3,位置偏移,LOT1108\n2026-11-08 13:09:00,苏州精工,BW-002,涂层厚度,309,2,局部脱落,LOT1108\n2026-11-08 13:10:00,苏州精工,BW-003,重量,359,1,偏轻,LOT1108\n2026-11-08 13:29:00,苏州精工,BW-003,外观,375,1,划伤,LOT1108\n2026-11-08 13:21:00,苏州精工,BW-003,孔位度,320,1,位置偏移,LOT1108\n2026-11-08 13:39:00,苏州精工,BW-003,涂层厚度,347,0,,LOT1108\n2026-11-08 13:11:00,宁波恒达,BW-001,重量,421,3,超重,LOT1108\n2026-11-08 13:49:00,宁波恒达,BW-001,外观,330,0,,LOT1108\n2026-11-08 13:05:00,宁波恒达,BW-001,孔位度,349,0,,LOT1108\n2026-11-08 13:39:00,宁波恒达,BW-001,涂层厚度,390,3,膜厚不足,LOT1108\n2026-11-08 13:58:00,宁波恒达,BW-002,重量,389,2,偏轻,LOT1108\n2026-11-08 13:03:00,宁波恒达,BW-002,外观,463,3,气孔,LOT1108\n2026-11-08 13:03:00,宁波恒达,BW-002,孔位度,365,1,孔径超差,LOT1108\n2026-11-08 13:30:00,宁波恒达,BW-002,涂层厚度,451,1,膜厚不足,LOT1108\n2026-11-08 13:27:00,宁波恒达,BW-003,重量,408,2,偏轻,LOT1108\n2026-11-08 13:05:00,宁波恒达,BW-003,外观,393,1,气孔,LOT1108\n2026-11-08 13:20:00,宁波恒达,BW-003,孔位度,363,1,孔径超差,LOT1108\n2026-11-08 13:53:00,宁波恒达,BW-003,涂层厚度,387,2,膜厚不足,LOT1108\n2026-11-08 13:36:00,青岛金属,BW-001,重量,423,1,超重,LOT1108\n2026-11-08 13:02:00,青岛金属,BW-001,外观,420,2,气孔,LOT1108\n2026-11-08 13:25:00,青岛金属,BW-001,孔位度,379,2,孔径超差,LOT1108\n2026-11-08 13:24:00,青岛金属,BW-001,涂层厚度,454,1,局部脱落,LOT1108\n2026-11-08 13:33:00,青岛金属,BW-002,重量,457,2,超重,LOT1108\n2026-11-08 13:25:00,青岛金属,BW-002,外观,412,1,划伤,LOT1108\n2026-11-08 13:13:00,青岛金属,BW-002,孔位度,442,1,孔径超差,LOT1108\n2026-11-08 13:04:00,青岛金属,BW-002,涂层厚度,490,4,局部脱落,LOT1108\n2026-11-08 13:00:00,青岛金属,BW-003,重量,487,3,偏轻,LOT1108\n2026-11-08 13:53:00,青岛金属,BW-003,外观,447,4,气孔,LOT1108\n2026-11-08 13:10:00,青岛金属,BW-003,孔位度,498,4,位置偏移,LOT1108\n2026-11-08 13:07:00,青岛金属,BW-003,涂层厚度,528,2,局部脱落,LOT1108\n2026-11-08 14:00:00,苏州精工,BW-001,重量,359,1,偏轻,LOT1108\n2026-11-08 14:59:00,苏州精工,BW-001,外观,366,1,划伤,LOT1108\n2026-11-08 14:32:00,苏州精工,BW-001,孔位度,296,1,位置偏移,LOT1108\n2026-11-08 14:28:00,苏州精工,BW-001,涂层厚度,348,1,膜厚不足,LOT1108\n2026-11-08 14:15:00,苏州精工,BW-002,重量,383,3,偏轻,LOT1108\n2026-11-08 14:41:00,苏州精工,BW-002,外观,428,3,气孔,LOT1108\n2026-11-08 14:41:00,苏州精工,BW-002,孔位度,333,2,位置偏移,LOT1108\n2026-11-08 14:57:00,苏州精工,BW-002,涂层厚度,371,1,膜厚不足,LOT1108\n2026-11-08 14:55:00,苏州精工,BW-003,重量,339,1,超重,LOT1108\n2026-11-08 14:45:00,苏州精工,BW-003,外观,362,3,划伤,LOT1108\n2026-11-08 14:00:00,苏州精工,BW-003,孔位度,398,2,位置偏移,LOT1108\n2026-11-08 14:44:00,苏州精工,BW-003,涂层厚度,336,2,膜厚不足,LOT1108\n2026-11-08 14:57:00,宁波恒达,BW-001,重量,440,3,偏轻,LOT1108\n2026-11-08 14:28:00,宁波恒达,BW-001,外观,368,1,划伤,LOT1108\n2026-11-08 14:27:00,宁波恒达,BW-001,孔位度,361,2,位置偏移,LOT1108\n2026-11-08 14:45:00,宁波恒达,BW-001,涂层厚度,439,1,局部脱落,LOT1108\n2026-11-08 14:08:00,宁波恒达,BW-002,重量,351,1,超重,LOT1108\n2026-11-08 14:46:00,宁波恒达,BW-002,外观,449,4,气孔,LOT1108\n2026-11-08 14:37:00,宁波恒达,BW-002,孔位度,357,3,孔径超差,LOT1108\n2026-11-08 14:13:00,宁波恒达,BW-002,涂层厚度,448,1,局部脱落,LOT1108\n2026-11-08 14:13:00,宁波恒达,BW-003,重量,366,2,偏轻,LOT1108\n2026-11-08 14:12:00,宁波恒达,BW-003,外观,437,0,,LOT1108\n2026-11-08 14:21:00,宁波恒达,BW-003,孔位度,368,2,孔径超差,LOT1108\n2026-11-08 14:26:00,宁波恒达,BW-003,涂层厚度,405,2,局部脱落,LOT1108\n2026-11-08 14:56:00,青岛金属,BW-001,重量,440,3,偏轻,LOT1108\n2026-11-08 14:53:00,青岛金属,BW-001,外观,392,3,划伤,LOT1108\n2026-11-08 14:52:00,青岛金属,BW-001,孔位度,389,1,孔径超差,LOT1108\n2026-11-08 14:07:00,青岛金属,BW-001,涂层厚度,419,4,局部脱落,LOT1108\n2026-11-08 14:21:00,青岛金属,BW-002,重量,481,3,超重,LOT1108\n2026-11-08 14:16:00,青岛金属,BW-002,外观,401,4,划伤,LOT1108\n2026-11-08 14:31:00,青岛金属,BW-002,孔位度,486,2,孔径超差,LOT1108\n2026-11-08 14:49:00,青岛金属,BW-002,涂层厚度,479,2,局部脱落,LOT1108\n2026-11-08 14:57:00,青岛金属,BW-003,重量,522,1,偏轻,LOT1108\n2026-11-08 14:00:00,青岛金属,BW-003,外观,421,2,气孔,LOT1108\n2026-11-08 14:28:00,青岛金属,BW-003,孔位度,425,1,位置偏移,LOT1108\n2026-11-08 14:23:00,青岛金属,BW-003,涂层厚度,432,2,膜厚不足,LOT1108\n2026-11-08 15:15:00,苏州精工,BW-001,重量,410,2,超重,LOT1108\n2026-11-08 15:08:00,苏州精工,BW-001,外观,339,1,气孔,LOT1108\n2026-11-08 15:25:00,苏州精工,BW-001,孔位度,320,2,孔径超差,LOT1108\n2026-11-08 15:16:00,苏州精工,BW-001,涂层厚度,291,1,膜厚不足,LOT1108\n2026-11-08 15:08:00,苏州精工,BW-002,重量,425,3,偏轻,LOT1108\n2026-11-08 15:08:00,苏州精工,BW-002,外观,416,1,气孔,LOT1108\n2026-11-08 15:40:00,苏州精工,BW-002,孔位度,416,2,位置偏移,LOT1108\n2026-11-08 15:45:00,苏州精工,BW-002,涂层厚度,336,1,膜厚不足,LOT1108\n2026-11-08 15:01:00,苏州精工,BW-003,重量,408,3,超重,LOT1108\n2026-11-08 15:25:00,苏州精工,BW-003,外观,348,3,气孔,LOT1108\n2026-11-08 15:07:00,苏州精工,BW-003,孔位度,328,1,孔径超差,LOT1108\n2026-11-08 15:51:00,苏州精工,BW-003,涂层厚度,367,1,膜厚不足,LOT1108\n2026-11-08 15:43:00,宁波恒达,BW-001,重量,385,3,超重,LOT1108\n2026-11-08 15:12:00,宁波恒达,BW-001,外观,336,2,气孔,LOT1108\n2026-11-08 15:30:00,宁波恒达,BW-001,孔位度,360,2,位置偏移,LOT1108\n2026-11-08 15:24:00,宁波恒达,BW-001,涂层厚度,427,4,局部脱落,LOT1108\n2026-11-08 15:19:00,宁波恒达,BW-002,重量,361,2,偏轻,LOT1108\n2026-11-08 15:46:00,宁波恒达,BW-002,外观,433,1,气孔,LOT1108\n2026-11-08 15:39:00,宁波恒达,BW-002,孔位度,351,2,孔径超差,LOT1108\n2026-11-08 15:29:00,宁波恒达,BW-002,涂层厚度,342,3,局部脱落,LOT1108\n2026-11-08 15:16:00,宁波恒达,BW-003,重量,431,3,超重,LOT1108\n2026-11-08 15:44:00,宁波恒达,BW-003,外观,414,4,划伤,LOT1108\n2026-11-08 15:41:00,宁波恒达,BW-003,孔位度,411,3,孔径超差,LOT1108\n2026-11-08 15:42:00,宁波恒达,BW-003,涂层厚度,385,2,局部脱落,LOT1108\n2026-11-08 15:23:00,青岛金属,BW-001,重量,483,2,超重,LOT1108\n2026-11-08 15:11:00,青岛金属,BW-001,外观,477,2,气孔,LOT1108\n2026-11-08 15:56:00,青岛金属,BW-001,孔位度,363,1,位置偏移,LOT1108\n2026-11-08 15:00:00,青岛金属,BW-001,涂层厚度,448,4,局部脱落,LOT1108\n2026-11-08 15:00:00,青岛金属,BW-002,重量,502,1,偏轻,LOT1108\n2026-11-08 15:54:00,青岛金属,BW-002,外观,454,3,气孔,LOT1108\n2026-11-08 15:08:00,青岛金属,BW-002,孔位度,462,1,孔径超差,LOT1108\n2026-11-08 15:34:00,青岛金属,BW-002,涂层厚度,446,4,膜厚不足,LOT1108\n2026-11-08 15:37:00,青岛金属,BW-003,重量,448,1,超重,LOT1108\n2026-11-08 15:30:00,青岛金属,BW-003,外观,405,1,气孔,LOT1108\n2026-11-08 15:52:00,青岛金属,BW-003,孔位度,529,3,孔径超差,LOT1108\n2026-11-08 15:38:00,青岛金属,BW-003,涂层厚度,461,4,膜厚不足,LOT1108\n2026-11-08 16:09:00,苏州精工,BW-001,重量,324,1,超重,LOT1108\n2026-11-08 16:55:00,苏州精工,BW-001,外观,314,1,气孔,LOT1108\n2026-11-08 16:41:00,苏州精工,BW-001,孔位度,296,1,位置偏移,LOT1108\n2026-11-08 16:24:00,苏州精工,BW-001,涂层厚度,337,2,膜厚不足,LOT1108\n2026-11-08 16:24:00,苏州精工,BW-002,重量,397,2,超重,LOT1108\n2026-11-08 16:44:00,苏州精工,BW-002,外观,322,3,划伤,LOT1108\n2026-11-08 16:27:00,苏州精工,BW-002,孔位度,406,3,孔径超差,LOT1108\n2026-11-08 16:27:00,苏州精工,BW-002,涂层厚度,378,2,局部脱落,LOT1108\n2026-11-08 16:05:00,苏州精工,BW-003,重量,435,2,偏轻,LOT1108\n2026-11-08 16:39:00,苏州精工,BW-003,外观,336,1,气孔,LOT1108\n2026-11-08 16:31:00,苏州精工,BW-003,孔位度,375,1,孔径超差,LOT1108\n2026-11-08 16:17:00,苏州精工,BW-003,涂层厚度,421,1,膜厚不足,LOT1108\n2026-11-08 16:57:00,宁波恒达,BW-001,重量,386,2,超重,LOT1108\n2026-11-08 16:33:00,宁波恒达,BW-001,外观,367,2,划伤,LOT1108\n2026-11-08 16:40:00,宁波恒达,BW-001,孔位度,449,1,孔径超差,LOT1108\n2026-11-08 16:37:00,宁波恒达,BW-001,涂层厚度,347,3,局部脱落,LOT1108\n2026-11-08 16:15:00,宁波恒达,BW-002,重量,361,1,超重,LOT1108\n2026-11-08 16:14:00,宁波恒达,BW-002,外观,387,2,气孔,LOT1108\n2026-11-08 16:15:00,宁波恒达,BW-002,孔位度,446,1,孔径超差,LOT1108\n2026-11-08 16:38:00,宁波恒达,BW-002,涂层厚度,405,1,局部脱落,LOT1108\n2026-11-08 16:29:00,宁波恒达,BW-003,重量,434,4,超重,LOT1108\n2026-11-08 16:16:00,宁波恒达,BW-003,外观,381,1,气孔,LOT1108\n2026-11-08 16:36:00,宁波恒达,BW-003,孔位度,425,3,位置偏移,LOT1108\n2026-11-08 16:23:00,宁波恒达,BW-003,涂层厚度,425,2,局部脱落,LOT1108\n2026-11-08 16:13:00,青岛金属,BW-001,重量,470,2,偏轻,LOT1108\n2026-11-08 16:40:00,青岛金属,BW-001,外观,360,1,气孔,LOT1108\n2026-11-08 16:32:00,青岛金属,BW-001,孔位度,422,1,位置偏移,LOT1108\n2026-11-08 16:37:00,青岛金属,BW-001,涂层厚度,416,2,局部脱落,LOT1108\n2026-11-08 16:22:00,青岛金属,BW-002,重量,380,2,超重,LOT1108\n2026-11-08 16:58:00,青岛金属,BW-002,外观,449,1,气孔,LOT1108\n2026-11-08 16:31:00,青岛金属,BW-002,孔位度,391,2,孔径超差,LOT1108\n2026-11-08 16:39:00,青岛金属,BW-002,涂层厚度,508,2,局部脱落,LOT1108\n2026-11-08 16:49:00,青岛金属,BW-003,重量,457,2,超重,LOT1108\n2026-11-08 16:15:00,青岛金属,BW-003,外观,446,3,划伤,LOT1108\n2026-11-08 16:23:00,青岛金属,BW-003,孔位度,513,3,孔径超差,LOT1108\n2026-11-08 16:24:00,青岛金属,BW-003,涂层厚度,520,2,膜厚不足,LOT1108\n2026-11-08 17:32:00,苏州精工,BW-001,重量,320,2,偏轻,LOT1108\n2026-11-08 17:17:00,苏州精工,BW-001,外观,290,1,划伤,LOT1108\n2026-11-08 17:55:00,苏州精工,BW-001,孔位度,391,3,位置偏移,LOT1108\n2026-11-08 17:00:00,苏州精工,BW-001,涂层厚度,393,2,膜厚不足,LOT1108\n2026-11-08 17:30:00,苏州精工,BW-002,重量,376,2,超重,LOT1108\n2026-11-08 17:33:00,苏州精工,BW-002,外观,333,1,气孔,LOT1108\n2026-11-08 17:13:00,苏州精工,BW-002,孔位度,353,1,孔径超差,LOT1108\n2026-11-08 17:26:00,苏州精工,BW-002,涂层厚度,410,2,局部脱落,LOT1108\n2026-11-08 17:21:00,苏州精工,BW-003,重量,369,3,超重,LOT1108\n2026-11-08 17:35:00,苏州精工,BW-003,外观,351,3,划伤,LOT1108\n2026-11-08 17:31:00,苏州精工,BW-003,孔位度,353,3,孔径超差,LOT1108\n2026-11-08 17:20:00,苏州精工,BW-003,涂层厚度,420,3,膜厚不足,LOT1108\n2026-11-08 17:33:00,宁波恒达,BW-001,重量,441,3,偏轻,LOT1108\n2026-11-08 17:05:00,宁波恒达,BW-001,外观,408,3,划伤,LOT1108\n2026-11-08 17:01:00,宁波恒达,BW-001,孔位度,360,3,孔径超差,LOT1108\n2026-11-08 17:01:00,宁波恒达,BW-001,涂层厚度,450,3,膜厚不足,LOT1108\n2026-11-08 17:42:00,宁波恒达,BW-002,重量,440,2,超重,LOT1108\n2026-11-08 17:44:00,宁波恒达,BW-002,外观,403,1,划伤,LOT1108\n2026-11-08 17:19:00,宁波恒达,BW-002,孔位度,363,2,位置偏移,LOT1108\n2026-11-08 17:47:00,宁波恒达,BW-002,涂层厚度,390,2,膜厚不足,LOT1108\n2026-11-08 17:51:00,宁波恒达,BW-003,重量,485,2,超重,LOT1108\n2026-11-08 17:21:00,宁波恒达,BW-003,外观,371,3,划伤,LOT1108\n2026-11-08 17:44:00,宁波恒达,BW-003,孔位度,411,1,位置偏移,LOT1108\n2026-11-08 17:43:00,宁波恒达,BW-003,涂层厚度,460,3,膜厚不足,LOT1108\n2026-11-08 17:50:00,青岛金属,BW-001,重量,467,4,偏轻,LOT1108\n2026-11-08 17:15:00,青岛金属,BW-001,外观,399,3,气孔,LOT1108\n2026-11-08 17:57:00,青岛金属,BW-001,孔位度,391,3,孔径超差,LOT1108\n2026-11-08 17:08:00,青岛金属,BW-001,涂层厚度,461,2,局部脱落,LOT1108\n2026-11-08 17:33:00,青岛金属,BW-002,重量,474,4,超重,LOT1108\n2026-11-08 17:57:00,青岛金属,BW-002,外观,509,4,气孔,LOT1108\n2026-11-08 17:12:00,青岛金属,BW-002,孔位度,502,4,孔径超差,LOT1108\n2026-11-08 17:31:00,青岛金属,BW-002,涂层厚度,394,1,局部脱落,LOT1108\n2026-11-08 17:44:00,青岛金属,BW-003,重量,477,3,超重,LOT1108\n2026-11-08 17:15:00,青岛金属,BW-003,外观,507,1,气孔,LOT1108\n2026-11-08 17:46:00,青岛金属,BW-003,孔位度,474,2,位置偏移,LOT1108\n2026-11-08 17:55:00,青岛金属,BW-003,涂层厚度,482,2,膜厚不足,LOT1108\n2026-11-09 08:34:00,苏州精工,BW-001,重量,400,2,超重,LOT1109\n2026-11-09 08:11:00,苏州精工,BW-001,外观,320,2,气孔,LOT1109\n2026-11-09 08:58:00,苏州精工,BW-001,孔位度,380,2,位置偏移,LOT1109\n2026-11-09 08:37:00,苏州精工,BW-001,涂层厚度,406,2,局部脱落,LOT1109\n2026-11-09 08:31:00,苏州精工,BW-002,重量,338,3,偏轻,LOT1109\n2026-11-09 08:46:00,苏州精工,BW-002,外观,395,0,,LOT1109\n2026-11-09 08:54:00,苏州精工,BW-002,孔位度,336,3,孔径超差,LOT1109\n2026-11-09 08:48:00,苏州精工,BW-002,涂层厚度,357,2,局部脱落,LOT1109\n2026-11-09 08:52:00,苏州精工,BW-003,重量,332,2,超重,LOT1109\n2026-11-09 08:41:00,苏州精工,BW-003,外观,349,3,气孔,LOT1109\n2026-11-09 08:10:00,苏州精工,BW-003,孔位度,322,3,孔径超差,LOT1109\n2026-11-09 08:23:00,苏州精工,BW-003,涂层厚度,432,2,局部脱落,LOT1109\n2026-11-09 08:28:00,宁波恒达,BW-001,重量,350,3,超重,LOT1109\n2026-11-09 08:06:00,宁波恒达,BW-001,外观,421,4,气孔,LOT1109\n2026-11-09 08:13:00,宁波恒达,BW-001,孔位度,444,1,孔径超差,LOT1109\n2026-11-09 08:52:00,宁波恒达,BW-001,涂层厚度,336,2,膜厚不足,LOT1109\n2026-11-09 08:39:00,宁波恒达,BW-002,重量,356,3,偏轻,LOT1109\n2026-11-09 08:03:00,宁波恒达,BW-002,外观,457,4,气孔,LOT1109\n2026-11-09 08:24:00,宁波恒达,BW-002,孔位度,369,2,位置偏移,LOT1109\n2026-11-09 08:08:00,宁波恒达,BW-002,涂层厚度,414,1,膜厚不足,LOT1109\n2026-11-09 08:46:00,宁波恒达,BW-003,重量,480,1,超重,LOT1109\n2026-11-09 08:33:00,宁波恒达,BW-003,外观,484,2,气孔,LOT1109\n2026-11-09 08:58:00,宁波恒达,BW-003,孔位度,363,2,孔径超差,LOT1109\n2026-11-09 08:52:00,宁波恒达,BW-003,涂层厚度,444,1,局部脱落,LOT1109\n2026-11-09 08:49:00,青岛金属,BW-001,重量,465,1,超重,LOT1109\n2026-11-09 08:57:00,青岛金属,BW-001,外观,398,2,划伤,LOT1109\n2026-11-09 08:40:00,青岛金属,BW-001,孔位度,471,2,位置偏移,LOT1109\n2026-11-09 08:13:00,青岛金属,BW-001,涂层厚度,453,3,膜厚不足,LOT1109\n2026-11-09 08:18:00,青岛金属,BW-002,重量,494,2,偏轻,LOT1109\n2026-11-09 08:22:00,青岛金属,BW-002,外观,411,1,气孔,LOT1109\n2026-11-09 08:29:00,青岛金属,BW-002,孔位度,455,3,位置偏移,LOT1109\n2026-11-09 08:25:00,青岛金属,BW-002,涂层厚度,475,4,局部脱落,LOT1109\n2026-11-09 08:40:00,青岛金属,BW-003,重量,496,3,偏轻,LOT1109\n2026-11-09 08:36:00,青岛金属,BW-003,外观,484,3,划伤,LOT1109\n2026-11-09 08:24:00,青岛金属,BW-003,孔位度,467,1,孔径超差,LOT1109\n2026-11-09 08:07:00,青岛金属,BW-003,涂层厚度,445,4,膜厚不足,LOT1109\n2026-11-09 09:47:00,苏州精工,BW-001,重量,392,2,超重,LOT1109\n2026-11-09 09:23:00,苏州精工,BW-001,外观,410,2,气孔,LOT1109\n2026-11-09 09:20:00,苏州精工,BW-001,孔位度,309,1,孔径超差,LOT1109\n2026-11-09 09:58:00,苏州精工,BW-001,涂层厚度,402,2,膜厚不足,LOT1109\n2026-11-09 09:22:00,苏州精工,BW-002,重量,350,1,超重,LOT1109\n2026-11-09 09:33:00,苏州精工,BW-002,外观,379,3,划伤,LOT1109\n2026-11-09 09:56:00,苏州精工,BW-002,孔位度,399,1,孔径超差,LOT1109\n2026-11-09 09:26:00,苏州精工,BW-002,涂层厚度,323,2,膜厚不足,LOT1109\n2026-11-09 09:28:00,苏州精工,BW-003,重量,345,0,,LOT1109\n2026-11-09 09:30:00,苏州精工,BW-003,外观,354,2,气孔,LOT1109\n2026-11-09 09:56:00,苏州精工,BW-003,孔位度,395,1,孔径超差,LOT1109\n2026-11-09 09:42:00,苏州精工,BW-003,涂层厚度,347,3,膜厚不足,LOT1109\n2026-11-09 09:43:00,宁波恒达,BW-001,重量,377,2,超重,LOT1109\n2026-11-09 09:55:00,宁波恒达,BW-001,外观,380,3,气孔,LOT1109\n2026-11-09 09:45:00,宁波恒达,BW-001,孔位度,351,3,孔径超差,LOT1109\n2026-11-09 09:49:00,宁波恒达,BW-001,涂层厚度,389,1,膜厚不足,LOT1109\n2026-11-09 09:00:00,宁波恒达,BW-002,重量,356,2,偏轻,LOT1109\n2026-11-09 09:01:00,宁波恒达,BW-002,外观,365,3,划伤,LOT1109\n2026-11-09 09:50:00,宁波恒达,BW-002,孔位度,371,1,孔径超差,LOT1109\n2026-11-09 09:41:00,宁波恒达,BW-002,涂层厚度,347,2,膜厚不足,LOT1109\n2026-11-09 09:42:00,宁波恒达,BW-003,重量,386,1,超重,LOT1109\n2026-11-09 09:54:00,宁波恒达,BW-003,外观,448,4,气孔,LOT1109\n2026-11-09 09:02:00,宁波恒达,BW-003,孔位度,421,3,位置偏移,LOT1109\n2026-11-09 09:29:00,宁波恒达,BW-003,涂层厚度,464,3,膜厚不足,LOT1109\n2026-11-09 09:40:00,青岛金属,BW-001,重量,360,1,超重,LOT1109\n2026-11-09 09:13:00,青岛金属,BW-001,外观,470,2,气孔,LOT1109\n2026-11-09 09:36:00,青岛金属,BW-001,孔位度,484,3,位置偏移,LOT1109\n2026-11-09 09:07:00,青岛金属,BW-001,涂层厚度,406,2,膜厚不足,LOT1109\n2026-11-09 09:07:00,青岛金属,BW-002,重量,387,1,偏轻,LOT1109\n2026-11-09 09:17:00,青岛金属,BW-002,外观,412,2,气孔,LOT1109\n2026-11-09 09:04:00,青岛金属,BW-002,孔位度,485,1,孔径超差,LOT1109\n2026-11-09 09:44:00,青岛金属,BW-002,涂层厚度,471,2,膜厚不足,LOT1109\n2026-11-09 09:34:00,青岛金属,BW-003,重量,513,1,偏轻,LOT1109\n2026-11-09 09:48:00,青岛金属,BW-003,外观,486,3,划伤,LOT1109\n2026-11-09 09:19:00,青岛金属,BW-003,孔位度,469,3,位置偏移,LOT1109\n2026-11-09 09:42:00,青岛金属,BW-003,涂层厚度,423,1,膜厚不足,LOT1109\n2026-11-09 10:17:00,苏州精工,BW-001,重量,361,0,,LOT1109\n2026-11-09 10:02:00,苏州精工,BW-001,外观,342,1,划伤,LOT1109\n2026-11-09 10:43:00,苏州精工,BW-001,孔位度,335,1,孔径超差,LOT1109\n2026-11-09 10:16:00,苏州精工,BW-001,涂层厚度,303,1,膜厚不足,LOT1109\n2026-11-09 10:16:00,苏州精工,BW-002,重量,325,1,超重,LOT1109\n2026-11-09 10:10:00,苏州精工,BW-002,外观,334,0,,LOT1109\n2026-11-09 10:36:00,苏州精工,BW-002,孔位度,343,2,位置偏移,LOT1109\n2026-11-09 10:11:00,苏州精工,BW-002,涂层厚度,345,1,局部脱落,LOT1109\n2026-11-09 10:27:00,苏州精工,BW-003,重量,439,2,超重,LOT1109\n2026-11-09 10:29:00,苏州精工,BW-003,外观,406,3,气孔,LOT1109\n2026-11-09 10:52:00,苏州精工,BW-003,孔位度,372,1,位置偏移,LOT1109\n2026-11-09 10:13:00,苏州精工,BW-003,涂层厚度,325,2,膜厚不足,LOT1109\n2026-11-09 10:30:00,宁波恒达,BW-001,重量,369,3,偏轻,LOT1109\n2026-11-09 10:02:00,宁波恒达,BW-001,外观,335,3,划伤,LOT1109\n2026-11-09 10:40:00,宁波恒达,BW-001,孔位度,411,3,孔径超差,LOT1109\n2026-11-09 10:54:00,宁波恒达,BW-001,涂层厚度,376,3,膜厚不足,LOT1109\n2026-11-09 10:19:00,宁波恒达,BW-002,重量,452,4,超重,LOT1109\n2026-11-09 10:08:00,宁波恒达,BW-002,外观,393,2,气孔,LOT1109\n2026-11-09 10:51:00,宁波恒达,BW-002,孔位度,348,1,孔径超差,LOT1109\n2026-11-09 10:14:00,宁波恒达,BW-002,涂层厚度,434,3,膜厚不足,LOT1109\n2026-11-09 10:39:00,宁波恒达,BW-003,重量,472,1,偏轻,LOT1109\n2026-11-09 10:00:00,宁波恒达,BW-003,外观,364,2,气孔,LOT1109\n2026-11-09 10:52:00,宁波恒达,BW-003,孔位度,364,1,位置偏移,LOT1109\n2026-11-09 10:32:00,宁波恒达,BW-003,涂层厚度,418,3,膜厚不足,LOT1109\n2026-11-09 10:34:00,青岛金属,BW-001,重量,393,1,偏轻,LOT1109\n2026-11-09 10:12:00,青岛金属,BW-001,外观,360,1,划伤,LOT1109\n2026-11-09 10:38:00,青岛金属,BW-001,孔位度,449,1,位置偏移,LOT1109\n2026-11-09 10:57:00,青岛金属,BW-001,涂层厚度,380,1,膜厚不足,LOT1109\n2026-11-09 10:00:00,青岛金属,BW-002,重量,453,1,超重,LOT1109\n2026-11-09 10:16:00,青岛金属,BW-002,外观,454,4,划伤,LOT1109\n2026-11-09 10:26:00,青岛金属,BW-002,孔位度,477,2,位置偏移,LOT1109\n2026-11-09 10:47:00,青岛金属,BW-002,涂层厚度,384,2,膜厚不足,LOT1109\n2026-11-09 10:50:00,青岛金属,BW-003,重量,429,2,偏轻,LOT1109\n2026-11-09 10:15:00,青岛金属,BW-003,外观,458,3,划伤,LOT1109\n2026-11-09 10:39:00,青岛金属,BW-003,孔位度,463,1,位置偏移,LOT1109\n2026-11-09 10:55:00,青岛金属,BW-003,涂层厚度,469,2,膜厚不足,LOT1109\n2026-11-09 11:12:00,苏州精工,BW-001,重量,341,1,超重,LOT1109\n2026-11-09 11:33:00,苏州精工,BW-001,外观,386,3,气孔,LOT1109\n2026-11-09 11:11:00,苏州精工,BW-001,孔位度,287,1,位置偏移,LOT1109\n2026-11-09 11:47:00,苏州精工,BW-001,涂层厚度,290,2,膜厚不足,LOT1109\n2026-11-09 11:22:00,苏州精工,BW-002,重量,397,3,超重,LOT1109\n2026-11-09 11:30:00,苏州精工,BW-002,外观,383,2,气孔,LOT1109\n2026-11-09 11:55:00,苏州精工,BW-002,孔位度,312,1,孔径超差,LOT1109\n2026-11-09 11:07:00,苏州精工,BW-002,涂层厚度,319,1,膜厚不足,LOT1109\n2026-11-09 11:20:00,苏州精工,BW-003,重量,429,1,超重,LOT1109\n2026-11-09 11:15:00,苏州精工,BW-003,外观,363,1,气孔,LOT1109\n2026-11-09 11:31:00,苏州精工,BW-003,孔位度,418,2,位置偏移,LOT1109\n2026-11-09 11:22:00,苏州精工,BW-003,涂层厚度,336,1,局部脱落,LOT1109\n2026-11-09 11:37:00,宁波恒达,BW-001,重量,437,3,偏轻,LOT1109\n2026-11-09 11:26:00,宁波恒达,BW-001,外观,441,1,气孔,LOT1109\n2026-11-09 11:35:00,宁波恒达,BW-001,孔位度,404,1,孔径超差,LOT1109\n2026-11-09 11:36:00,宁波恒达,BW-001,涂层厚度,447,1,膜厚不足,LOT1109\n2026-11-09 11:33:00,宁波恒达,BW-002,重量,363,3,超重,LOT1109\n2026-11-09 11:27:00,宁波恒达,BW-002,外观,376,3,划伤,LOT1109\n2026-11-09 11:53:00,宁波恒达,BW-002,孔位度,380,0,,LOT1109\n2026-11-09 11:18:00,宁波恒达,BW-002,涂层厚度,348,2,局部脱落,LOT1109\n2026-11-09 11:16:00,宁波恒达,BW-003,重量,394,1,偏轻,LOT1109\n2026-11-09 11:21:00,宁波恒达,BW-003,外观,453,4,划伤,LOT1109\n2026-11-09 11:22:00,宁波恒达,BW-003,孔位度,478,4,位置偏移,LOT1109\n2026-11-09 11:01:00,宁波恒达,BW-003,涂层厚度,484,4,局部脱落,LOT1109\n2026-11-09 11:23:00,青岛金属,BW-001,重量,413,2,超重,LOT1109\n2026-11-09 11:51:00,青岛金属,BW-001,外观,454,0,,LOT1109\n2026-11-09 11:32:00,青岛金属,BW-001,孔位度,414,3,孔径超差,LOT1109\n2026-11-09 11:55:00,青岛金属,BW-001,涂层厚度,408,3,局部脱落,LOT1109\n2026-11-09 11:04:00,青岛金属,BW-002,重量,484,4,偏轻,LOT1109\n2026-11-09 11:45:00,青岛金属,BW-002,外观,494,4,气孔,LOT1109\n2026-11-09 11:53:00,青岛金属,BW-002,孔位度,472,1,位置偏移,LOT1109\n2026-11-09 11:19:00,青岛金属,BW-002,涂层厚度,489,2,局部脱落,LOT1109\n2026-11-09 11:33:00,青岛金属,BW-003,重量,411,2,超重,LOT1109\n2026-11-09 11:00:00,青岛金属,BW-003,外观,512,4,划伤,LOT1109\n2026-11-09 11:06:00,青岛金属,BW-003,孔位度,415,3,位置偏移,LOT1109\n2026-11-09 11:44:00,青岛金属,BW-003,涂层厚度,432,1,膜厚不足,LOT1109\n2026-11-09 12:59:00,苏州精工,BW-001,重量,310,2,偏轻,LOT1109\n2026-11-09 12:03:00,苏州精工,BW-001,外观,390,3,划伤,LOT1109\n2026-11-09 12:10:00,苏州精工,BW-001,孔位度,308,3,孔径超差,LOT1109\n2026-11-09 12:51:00,苏州精工,BW-001,涂层厚度,320,1,膜厚不足,LOT1109\n2026-11-09 12:38:00,苏州精工,BW-002,重量,419,1,超重,LOT1109\n2026-11-09 12:33:00,苏州精工,BW-002,外观,304,2,划伤,LOT1109\n2026-11-09 12:32:00,苏州精工,BW-002,孔位度,326,1,孔径超差,LOT1109\n2026-11-09 12:45:00,苏州精工,BW-002,涂层厚度,313,1,膜厚不足,LOT1109\n2026-11-09 12:52:00,苏州精工,BW-003,重量,332,2,超重,LOT1109\n2026-11-09 12:27:00,苏州精工,BW-003,外观,335,1,气孔,LOT1109\n2026-11-09 12:14:00,苏州精工,BW-003,孔位度,331,3,孔径超差,LOT1109\n2026-11-09 12:54:00,苏州精工,BW-003,涂层厚度,445,2,膜厚不足,LOT1109\n2026-11-09 12:43:00,宁波恒达,BW-001,重量,338,1,超重,LOT1109\n2026-11-09 12:42:00,宁波恒达,BW-001,外观,434,4,气孔,LOT1109\n2026-11-09 12:17:00,宁波恒达,BW-001,孔位度,418,3,位置偏移,LOT1109\n2026-11-09 12:06:00,宁波恒达,BW-001,涂层厚度,341,2,局部脱落,LOT1109\n2026-11-09 12:00:00,宁波恒达,BW-002,重量,367,3,超重,LOT1109\n2026-11-09 12:14:00,宁波恒达,BW-002,外观,358,2,划伤,LOT1109\n2026-11-09 12:24:00,宁波恒达,BW-002,孔位度,437,2,孔径超差,LOT1109\n2026-11-09 12:47:00,宁波恒达,BW-002,涂层厚度,394,2,局部脱落,LOT1109\n2026-11-09 12:35:00,宁波恒达,BW-003,重量,461,2,超重,LOT1109\n2026-11-09 12:05:00,宁波恒达,BW-003,外观,378,2,气孔,LOT1109\n2026-11-09 12:47:00,宁波恒达,BW-003,孔位度,382,3,位置偏移,LOT1109\n2026-11-09 12:17:00,宁波恒达,BW-003,涂层厚度,477,4,局部脱落,LOT1109\n2026-11-09 12:40:00,青岛金属,BW-001,重量,465,3,超重,LOT1109\n2026-11-09 12:49:00,青岛金属,BW-001,外观,459,4,划伤,LOT1109\n2026-11-09 12:23:00,青岛金属,BW-001,孔位度,392,2,孔径超差,LOT1109\n2026-11-09 12:37:00,青岛金属,BW-001,涂层厚度,430,1,局部脱落,LOT1109\n2026-11-09 12:15:00,青岛金属,BW-002,重量,474,2,偏轻,LOT1109\n2026-11-09 12:33:00,青岛金属,BW-002,外观,471,2,划伤,LOT1109\n2026-11-09 12:14:00,青岛金属,BW-002,孔位度,473,4,位置偏移,LOT1109\n2026-11-09 12:02:00,青岛金属,BW-002,涂层厚度,453,2,局部脱落,LOT1109\n2026-11-09 12:21:00,青岛金属,BW-003,重量,479,3,超重,LOT1109\n2026-11-09 12:40:00,青岛金属,BW-003,外观,462,1,气孔,LOT1109\n2026-11-09 12:22:00,青岛金属,BW-003,孔位度,527,4,位置偏移,LOT1109\n2026-11-09 12:53:00,青岛金属,BW-003,涂层厚度,498,3,局部脱落,LOT1109\n2026-11-09 13:08:00,苏州精工,BW-001,重量,381,3,偏轻,LOT1109\n2026-11-09 13:56:00,苏州精工,BW-001,外观,379,2,气孔,LOT1109\n2026-11-09 13:29:00,苏州精工,BW-001,孔位度,394,2,位置偏移,LOT1109\n2026-11-09 13:08:00,苏州精工,BW-001,涂层厚度,284,0,,LOT1109\n2026-11-09 13:11:00,苏州精工,BW-002,重量,306,2,偏轻,LOT1109\n2026-11-09 13:49:00,苏州精工,BW-002,外观,405,2,划伤,LOT1109\n2026-11-09 13:11:00,苏州精工,BW-002,孔位度,391,1,位置偏移,LOT1109\n2026-11-09 13:27:00,苏州精工,BW-002,涂层厚度,330,3,膜厚不足,LOT1109\n2026-11-09 13:12:00,苏州精工,BW-003,重量,446,1,超重,LOT1109\n2026-11-09 13:33:00,苏州精工,BW-003,外观,384,2,划伤,LOT1109\n2026-11-09 13:57:00,苏州精工,BW-003,孔位度,387,2,位置偏移,LOT1109\n2026-11-09 13:19:00,苏州精工,BW-003,涂层厚度,420,2,膜厚不足,LOT1109\n2026-11-09 13:33:00,宁波恒达,BW-001,重量,415,2,偏轻,LOT1109\n2026-11-09 13:35:00,宁波恒达,BW-001,外观,353,2,划伤,LOT1109\n2026-11-09 13:15:00,宁波恒达,BW-001,孔位度,330,1,位置偏移,LOT1109\n2026-11-09 13:55:00,宁波恒达,BW-001,涂层厚度,408,2,局部脱落,LOT1109\n2026-11-09 13:19:00,宁波恒达,BW-002,重量,350,2,超重,LOT1109\n2026-11-09 13:23:00,宁波恒达,BW-002,外观,457,4,气孔,LOT1109\n2026-11-09 13:07:00,宁波恒达,BW-002,孔位度,425,4,位置偏移,LOT1109\n2026-11-09 13:44:00,宁波恒达,BW-002,涂层厚度,458,1,膜厚不足,LOT1109\n2026-11-09 13:56:00,宁波恒达,BW-003,重量,475,2,偏轻,LOT1109\n2026-11-09 13:00:00,宁波恒达,BW-003,外观,445,3,划伤,LOT1109\n2026-11-09 13:37:00,宁波恒达,BW-003,孔位度,449,3,孔径超差,LOT1109\n2026-11-09 13:44:00,宁波恒达,BW-003,涂层厚度,413,2,膜厚不足,LOT1109\n2026-11-09 13:16:00,青岛金属,BW-001,重量,390,1,偏轻,LOT1109\n2026-11-09 13:55:00,青岛金属,BW-001,外观,380,1,划伤,LOT1109\n2026-11-09 13:20:00,青岛金属,BW-001,孔位度,476,1,孔径超差,LOT1109\n2026-11-09 13:27:00,青岛金属,BW-001,涂层厚度,388,3,局部脱落,LOT1109\n2026-11-09 13:29:00,青岛金属,BW-002,重量,391,1,偏轻,LOT1109\n2026-11-09 13:37:00,青岛金属,BW-002,外观,427,1,划伤,LOT1109\n2026-11-09 13:04:00,青岛金属,BW-002,孔位度,455,3,孔径超差,LOT1109\n2026-11-09 13:44:00,青岛金属,BW-002,涂层厚度,498,3,膜厚不足,LOT1109\n2026-11-09 13:56:00,青岛金属,BW-003,重量,431,1,超重,LOT1109\n2026-11-09 13:56:00,青岛金属,BW-003,外观,524,3,气孔,LOT1109\n2026-11-09 13:42:00,青岛金属,BW-003,孔位度,404,3,孔径超差,LOT1109\n2026-11-09 13:53:00,青岛金属,BW-003,涂层厚度,450,1,膜厚不足,LOT1109\n2026-11-09 14:36:00,苏州精工,BW-001,重量,344,2,偏轻,LOT1109\n2026-11-09 14:46:00,苏州精工,BW-001,外观,360,3,气孔,LOT1109\n2026-11-09 14:53:00,苏州精工,BW-001,孔位度,331,2,孔径超差,LOT1109\n2026-11-09 14:12:00,苏州精工,BW-001,涂层厚度,305,2,局部脱落,LOT1109\n2026-11-09 14:31:00,苏州精工,BW-002,重量,309,2,偏轻,LOT1109\n2026-11-09 14:40:00,苏州精工,BW-002,外观,397,3,气孔,LOT1109\n2026-11-09 14:15:00,苏州精工,BW-002,孔位度,332,2,位置偏移,LOT1109\n2026-11-09 14:18:00,苏州精工,BW-002,涂层厚度,300,2,膜厚不足,LOT1109\n2026-11-09 14:12:00,苏州精工,BW-003,重量,351,1,超重,LOT1109\n2026-11-09 14:43:00,苏州精工,BW-003,外观,443,3,划伤,LOT1109\n2026-11-09 14:38:00,苏州精工,BW-003,孔位度,335,2,孔径超差,LOT1109\n2026-11-09 14:16:00,苏州精工,BW-003,涂层厚度,325,2,局部脱落,LOT1109\n2026-11-09 14:19:00,宁波恒达,BW-001,重量,442,4,超重,LOT1109\n2026-11-09 14:15:00,宁波恒达,BW-001,外观,386,1,气孔,LOT1109\n2026-11-09 14:39:00,宁波恒达,BW-001,孔位度,430,2,孔径超差,LOT1109\n2026-11-09 14:16:00,宁波恒达,BW-001,涂层厚度,415,2,局部脱落,LOT1109\n2026-11-09 14:08:00,宁波恒达,BW-002,重量,448,3,超重,LOT1109\n2026-11-09 14:11:00,宁波恒达,BW-002,外观,357,3,气孔,LOT1109\n2026-11-09 14:45:00,宁波恒达,BW-002,孔位度,408,2,孔径超差,LOT1109\n2026-11-09 14:46:00,宁波恒达,BW-002,涂层厚度,353,1,膜厚不足,LOT1109\n2026-11-09 14:15:00,宁波恒达,BW-003,重量,397,3,偏轻,LOT1109\n2026-11-09 14:02:00,宁波恒达,BW-003,外观,361,3,划伤,LOT1109\n2026-11-09 14:16:00,宁波恒达,BW-003,孔位度,379,1,孔径超差,LOT1109\n2026-11-09 14:01:00,宁波恒达,BW-003,涂层厚度,382,1,局部脱落,LOT1109\n2026-11-09 14:18:00,青岛金属,BW-001,重量,424,3,超重,LOT1109\n2026-11-09 14:49:00,青岛金属,BW-001,外观,367,3,划伤,LOT1109\n2026-11-09 14:28:00,青岛金属,BW-001,孔位度,439,2,孔径超差,LOT1109\n2026-11-09 14:45:00,青岛金属,BW-001,涂层厚度,487,1,局部脱落,LOT1109\n2026-11-09 14:00:00,青岛金属,BW-002,重量,402,3,超重,LOT1109\n2026-11-09 14:05:00,青岛金属,BW-002,外观,495,4,划伤,LOT1109\n2026-11-09 14:54:00,青岛金属,BW-002,孔位度,459,3,孔径超差,LOT1109\n2026-11-09 14:06:00,青岛金属,BW-002,涂层厚度,407,3,局部脱落,LOT1109\n2026-11-09 14:31:00,青岛金属,BW-003,重量,513,1,偏轻,LOT1109\n2026-11-09 14:38:00,青岛金属,BW-003,外观,480,4,气孔,LOT1109\n2026-11-09 14:57:00,青岛金属,BW-003,孔位度,527,4,孔径超差,LOT1109\n2026-11-09 14:00:00,青岛金属,BW-003,涂层厚度,423,1,局部脱落,LOT1109\n2026-11-09 15:05:00,苏州精工,BW-001,重量,390,2,偏轻,LOT1109\n2026-11-09 15:58:00,苏州精工,BW-001,外观,341,2,气孔,LOT1109\n2026-11-09 15:37:00,苏州精工,BW-001,孔位度,342,1,位置偏移,LOT1109\n2026-11-09 15:37:00,苏州精工,BW-001,涂层厚度,287,2,局部脱落,LOT1109\n2026-11-09 15:13:00,苏州精工,BW-002,重量,335,2,偏轻,LOT1109\n2026-11-09 15:58:00,苏州精工,BW-002,外观,420,1,划伤,LOT1109\n2026-11-09 15:12:00,苏州精工,BW-002,孔位度,354,3,孔径超差,LOT1109\n2026-11-09 15:52:00,苏州精工,BW-002,涂层厚度,376,1,膜厚不足,LOT1109\n2026-11-09 15:36:00,苏州精工,BW-003,重量,434,2,超重,LOT1109\n2026-11-09 15:12:00,苏州精工,BW-003,外观,320,2,气孔,LOT1109\n2026-11-09 15:57:00,苏州精工,BW-003,孔位度,356,2,位置偏移,LOT1109\n2026-11-09 15:18:00,苏州精工,BW-003,涂层厚度,333,1,局部脱落,LOT1109\n2026-11-09 15:11:00,宁波恒达,BW-001,重量,378,3,超重,LOT1109\n2026-11-09 15:56:00,宁波恒达,BW-001,外观,368,2,气孔,LOT1109\n2026-11-09 15:19:00,宁波恒达,BW-001,孔位度,450,3,孔径超差,LOT1109\n2026-11-09 15:44:00,宁波恒达,BW-001,涂层厚度,439,1,膜厚不足,LOT1109\n2026-11-09 15:36:00,宁波恒达,BW-002,重量,347,2,超重,LOT1109\n2026-11-09 15:38:00,宁波恒达,BW-002,外观,403,3,气孔,LOT1109\n2026-11-09 15:47:00,宁波恒达,BW-002,孔位度,342,1,孔径超差,LOT1109\n2026-11-09 15:27:00,宁波恒达,BW-002,涂层厚度,465,4,局部脱落,LOT1109\n2026-11-09 15:17:00,宁波恒达,BW-003,重量,474,3,偏轻,LOT1109\n2026-11-09 15:34:00,宁波恒达,BW-003,外观,412,1,划伤,LOT1109\n2026-11-09 15:39:00,宁波恒达,BW-003,孔位度,476,3,位置偏移,LOT1109\n2026-11-09 15:38:00,宁波恒达,BW-003,涂层厚度,465,3,膜厚不足,LOT1109\n2026-11-09 15:43:00,青岛金属,BW-001,重量,370,2,超重,LOT1109\n2026-11-09 15:05:00,青岛金属,BW-001,外观,436,2,划伤,LOT1109\n2026-11-09 15:06:00,青岛金属,BW-001,孔位度,408,1,位置偏移,LOT1109\n2026-11-09 15:11:00,青岛金属,BW-001,涂层厚度,481,2,局部脱落,LOT1109\n2026-11-09 15:41:00,青岛金属,BW-002,重量,434,1,超重,LOT1109\n2026-11-09 15:04:00,青岛金属,BW-002,外观,509,2,气孔,LOT1109\n2026-11-09 15:28:00,青岛金属,BW-002,孔位度,499,3,位置偏移,LOT1109\n2026-11-09 15:39:00,青岛金属,BW-002,涂层厚度,490,4,膜厚不足,LOT1109\n2026-11-09 15:02:00,青岛金属,BW-003,重量,496,4,超重,LOT1109\n2026-11-09 15:06:00,青岛金属,BW-003,外观,526,1,划伤,LOT1109\n2026-11-09 15:15:00,青岛金属,BW-003,孔位度,428,0,,LOT1109\n2026-11-09 15:26:00,青岛金属,BW-003,涂层厚度,509,4,膜厚不足,LOT1109\n2026-11-09 16:42:00,苏州精工,BW-001,重量,370,2,偏轻,LOT1109\n2026-11-09 16:35:00,苏州精工,BW-001,外观,284,1,气孔,LOT1109\n2026-11-09 16:26:00,苏州精工,BW-001,孔位度,321,1,孔径超差,LOT1109\n2026-11-09 16:15:00,苏州精工,BW-001,涂层厚度,328,2,局部脱落,LOT1109\n2026-11-09 16:09:00,苏州精工,BW-002,重量,404,2,偏轻,LOT1109\n2026-11-09 16:05:00,苏州精工,BW-002,外观,343,1,气孔,LOT1109\n2026-11-09 16:05:00,苏州精工,BW-002,孔位度,311,2,孔径超差,LOT1109\n2026-11-09 16:23:00,苏州精工,BW-002,涂层厚度,342,1,膜厚不足,LOT1109\n2026-11-09 16:35:00,苏州精工,BW-003,重量,415,3,偏轻,LOT1109\n2026-11-09 16:16:00,苏州精工,BW-003,外观,344,1,划伤,LOT1109\n2026-11-09 16:09:00,苏州精工,BW-003,孔位度,351,0,,LOT1109\n2026-11-09 16:31:00,苏州精工,BW-003,涂层厚度,361,1,膜厚不足,LOT1109\n2026-11-09 16:02:00,宁波恒达,BW-001,重量,441,3,偏轻,LOT1109\n2026-11-09 16:57:00,宁波恒达,BW-001,外观,366,2,划伤,LOT1109\n2026-11-09 16:20:00,宁波恒达,BW-001,孔位度,444,2,位置偏移,LOT1109\n2026-11-09 16:17:00,宁波恒达,BW-001,涂层厚度,386,1,膜厚不足,LOT1109\n2026-11-09 16:52:00,宁波恒达,BW-002,重量,406,3,超重,LOT1109\n2026-11-09 16:42:00,宁波恒达,BW-002,外观,387,1,划伤,LOT1109\n2026-11-09 16:24:00,宁波恒达,BW-002,孔位度,402,2,位置偏移,LOT1109\n2026-11-09 16:04:00,宁波恒达,BW-002,涂层厚度,351,3,局部脱落,LOT1109\n2026-11-09 16:27:00,宁波恒达,BW-003,重量,446,3,偏轻,LOT1109\n2026-11-09 16:34:00,宁波恒达,BW-003,外观,382,3,划伤,LOT1109\n2026-11-09 16:23:00,宁波恒达,BW-003,孔位度,379,3,孔径超差,LOT1109\n2026-11-09 16:20:00,宁波恒达,BW-003,涂层厚度,413,3,膜厚不足,LOT1109\n2026-11-09 16:33:00,青岛金属,BW-001,重量,473,3,偏轻,LOT1109\n2026-11-09 16:46:00,青岛金属,BW-001,外观,376,1,划伤,LOT1109\n2026-11-09 16:58:00,青岛金属,BW-001,孔位度,434,3,孔径超差,LOT1109\n2026-11-09 16:05:00,青岛金属,BW-001,涂层厚度,469,2,膜厚不足,LOT1109\n2026-11-09 16:06:00,青岛金属,BW-002,重量,479,3,偏轻,LOT1109\n2026-11-09 16:54:00,青岛金属,BW-002,外观,405,3,划伤,LOT1109\n2026-11-09 16:17:00,青岛金属,BW-002,孔位度,465,2,位置偏移,LOT1109\n2026-11-09 16:19:00,青岛金属,BW-002,涂层厚度,398,0,,LOT1109\n2026-11-09 16:54:00,青岛金属,BW-003,重量,463,2,超重,LOT1109\n2026-11-09 16:57:00,青岛金属,BW-003,外观,504,4,划伤,LOT1109\n2026-11-09 16:30:00,青岛金属,BW-003,孔位度,431,2,孔径超差,LOT1109\n2026-11-09 16:23:00,青岛金属,BW-003,涂层厚度,400,2,局部脱落,LOT1109\n2026-11-09 17:08:00,苏州精工,BW-001,重量,320,2,偏轻,LOT1109\n2026-11-09 17:20:00,苏州精工,BW-001,外观,367,3,气孔,LOT1109\n2026-11-09 17:41:00,苏州精工,BW-001,孔位度,327,1,孔径超差,LOT1109\n2026-11-09 17:46:00,苏州精工,BW-001,涂层厚度,311,1,膜厚不足,LOT1109\n2026-11-09 17:10:00,苏州精工,BW-002,重量,327,1,偏轻,LOT1109\n2026-11-09 17:41:00,苏州精工,BW-002,外观,419,1,气孔,LOT1109\n2026-11-09 17:26:00,苏州精工,BW-002,孔位度,319,2,孔径超差,LOT1109\n2026-11-09 17:46:00,苏州精工,BW-002,涂层厚度,354,2,局部脱落,LOT1109\n2026-11-09 17:05:00,苏州精工,BW-003,重量,371,1,超重,LOT1109\n2026-11-09 17:27:00,苏州精工,BW-003,外观,390,2,划伤,LOT1109\n2026-11-09 17:11:00,苏州精工,BW-003,孔位度,400,2,位置偏移,LOT1109\n2026-11-09 17:02:00,苏州精工,BW-003,涂层厚度,426,1,局部脱落,LOT1109\n2026-11-09 17:50:00,宁波恒达,BW-001,重量,354,3,超重,LOT1109\n2026-11-09 17:24:00,宁波恒达,BW-001,外观,322,2,划伤,LOT1109\n2026-11-09 17:36:00,宁波恒达,BW-001,孔位度,326,1,位置偏移,LOT1109\n2026-11-09 17:05:00,宁波恒达,BW-001,涂层厚度,386,2,膜厚不足,LOT1109\n2026-11-09 17:01:00,宁波恒达,BW-002,重量,349,1,超重,LOT1109\n2026-11-09 17:07:00,宁波恒达,BW-002,外观,401,2,划伤,LOT1109\n2026-11-09 17:23:00,宁波恒达,BW-002,孔位度,441,0,,LOT1109\n2026-11-09 17:35:00,宁波恒达,BW-002,涂层厚度,371,1,局部脱落,LOT1109\n2026-11-09 17:12:00,宁波恒达,BW-003,重量,480,1,偏轻,LOT1109\n2026-11-09 17:44:00,宁波恒达,BW-003,外观,407,3,划伤,LOT1109\n2026-11-09 17:55:00,宁波恒达,BW-003,孔位度,397,2,位置偏移,LOT1109\n2026-11-09 17:16:00,宁波恒达,BW-003,涂层厚度,360,1,膜厚不足,LOT1109\n2026-11-09 17:58:00,青岛金属,BW-001,重量,417,1,偏轻,LOT1109\n2026-11-09 17:08:00,青岛金属,BW-001,外观,460,4,划伤,LOT1109\n2026-11-09 17:35:00,青岛金属,BW-001,孔位度,455,2,孔径超差,LOT1109\n2026-11-09 17:06:00,青岛金属,BW-001,涂层厚度,441,4,局部脱落,LOT1109\n2026-11-09 17:44:00,青岛金属,BW-002,重量,498,4,超重,LOT1109\n2026-11-09 17:25:00,青岛金属,BW-002,外观,447,1,气孔,LOT1109\n2026-11-09 17:46:00,青岛金属,BW-002,孔位度,444,2,孔径超差,LOT1109\n2026-11-09 17:26:00,青岛金属,BW-002,涂层厚度,449,1,局部脱落,LOT1109\n2026-11-09 17:44:00,青岛金属,BW-003,重量,461,3,超重,LOT1109\n2026-11-09 17:22:00,青岛金属,BW-003,外观,452,1,气孔,LOT1109\n2026-11-09 17:47:00,青岛金属,BW-003,孔位度,469,4,孔径超差,LOT1109\n2026-11-09 17:43:00,青岛金属,BW-003,涂层厚度,512,3,局部脱落,LOT1109\n2026-11-10 08:16:00,苏州精工,BW-001,重量,303,1,超重,LOT1110\n2026-11-10 08:04:00,苏州精工,BW-001,外观,285,1,气孔,LOT1110\n2026-11-10 08:11:00,苏州精工,BW-001,孔位度,368,2,位置偏移,LOT1110\n2026-11-10 08:06:00,苏州精工,BW-001,涂层厚度,286,1,膜厚不足,LOT1110\n2026-11-10 08:49:00,苏州精工,BW-002,重量,313,1,超重,LOT1110\n2026-11-10 08:47:00,苏州精工,BW-002,外观,380,3,划伤,LOT1110\n2026-11-10 08:45:00,苏州精工,BW-002,孔位度,354,2,孔径超差,LOT1110\n2026-11-10 08:11:00,苏州精工,BW-002,涂层厚度,403,1,膜厚不足,LOT1110\n2026-11-10 08:05:00,苏州精工,BW-003,重量,380,3,超重,LOT1110\n2026-11-10 08:11:00,苏州精工,BW-003,外观,449,1,气孔,LOT1110\n2026-11-10 08:06:00,苏州精工,BW-003,孔位度,448,4,孔径超差,LOT1110\n2026-11-10 08:38:00,苏州精工,BW-003,涂层厚度,341,0,,LOT1110\n2026-11-10 08:30:00,宁波恒达,BW-001,重量,365,1,超重,LOT1110\n2026-11-10 08:57:00,宁波恒达,BW-001,外观,420,2,划伤,LOT1110\n2026-11-10 08:14:00,宁波恒达,BW-001,孔位度,413,1,孔径超差,LOT1110\n2026-11-10 08:57:00,宁波恒达,BW-001,涂层厚度,340,3,局部脱落,LOT1110\n2026-11-10 08:08:00,宁波恒达,BW-002,重量,448,1,偏轻,LOT1110\n2026-11-10 08:27:00,宁波恒达,BW-002,外观,463,1,划伤,LOT1110\n2026-11-10 08:54:00,宁波恒达,BW-002,孔位度,404,1,位置偏移,LOT1110\n2026-11-10 08:33:00,宁波恒达,BW-002,涂层厚度,397,1,膜厚不足,LOT1110\n2026-11-10 08:09:00,宁波恒达,BW-003,重量,406,3,超重,LOT1110\n2026-11-10 08:03:00,宁波恒达,BW-003,外观,430,4,气孔,LOT1110\n2026-11-10 08:04:00,宁波恒达,BW-003,孔位度,480,3,孔径超差,LOT1110\n2026-11-10 08:22:00,宁波恒达,BW-003,涂层厚度,420,3,膜厚不足,LOT1110\n2026-11-10 08:39:00,青岛金属,BW-001,重量,444,1,超重,LOT1110\n2026-11-10 08:06:00,青岛金属,BW-001,外观,424,4,气孔,LOT1110\n2026-11-10 08:10:00,青岛金属,BW-001,孔位度,396,3,孔径超差,LOT1110\n2026-11-10 08:09:00,青岛金属,BW-001,涂层厚度,448,1,膜厚不足,LOT1110\n2026-11-10 08:41:00,青岛金属,BW-002,重量,465,4,超重,LOT1110\n2026-11-10 08:08:00,青岛金属,BW-002,外观,418,3,气孔,LOT1110\n2026-11-10 08:36:00,青岛金属,BW-002,孔位度,447,3,孔径超差,LOT1110\n2026-11-10 08:51:00,青岛金属,BW-002,涂层厚度,461,1,局部脱落,LOT1110\n2026-11-10 08:06:00,青岛金属,BW-003,重量,523,3,偏轻,LOT1110\n2026-11-10 08:44:00,青岛金属,BW-003,外观,441,2,气孔,LOT1110\n2026-11-10 08:56:00,青岛金属,BW-003,孔位度,467,2,位置偏移,LOT1110\n2026-11-10 08:54:00,青岛金属,BW-003,涂层厚度,469,3,局部脱落,LOT1110\n2026-11-10 09:08:00,苏州精工,BW-001,重量,361,3,超重,LOT1110\n2026-11-10 09:03:00,苏州精工,BW-001,外观,343,0,,LOT1110\n2026-11-10 09:38:00,苏州精工,BW-001,孔位度,350,1,孔径超差,LOT1110\n2026-11-10 09:00:00,苏州精工,BW-001,涂层厚度,298,1,局部脱落,LOT1110\n2026-11-10 09:17:00,苏州精工,BW-002,重量,337,1,偏轻,LOT1110\n2026-11-10 09:23:00,苏州精工,BW-002,外观,342,2,气孔,LOT1110\n2026-11-10 09:08:00,苏州精工,BW-002,孔位度,340,0,,LOT1110\n2026-11-10 09:15:00,苏州精工,BW-002,涂层厚度,367,1,局部脱落,LOT1110\n2026-11-10 09:22:00,苏州精工,BW-003,重量,408,4,超重,LOT1110\n2026-11-10 09:17:00,苏州精工,BW-003,外观,327,3,划伤,LOT1110\n2026-11-10 09:40:00,苏州精工,BW-003,孔位度,380,2,孔径超差,LOT1110\n2026-11-10 09:59:00,苏州精工,BW-003,涂层厚度,364,2,局部脱落,LOT1110\n2026-11-10 09:43:00,宁波恒达,BW-001,重量,422,2,超重,LOT1110\n2026-11-10 09:30:00,宁波恒达,BW-001,外观,377,2,气孔,LOT1110\n2026-11-10 09:21:00,宁波恒达,BW-001,孔位度,342,1,孔径超差,LOT1110\n2026-11-10 09:11:00,宁波恒达,BW-001,涂层厚度,444,3,局部脱落,LOT1110\n2026-11-10 09:33:00,宁波恒达,BW-002,重量,390,2,偏轻,LOT1110\n2026-11-10 09:45:00,宁波恒达,BW-002,外观,382,3,划伤,LOT1110\n2026-11-10 09:20:00,宁波恒达,BW-002,孔位度,392,1,孔径超差,LOT1110\n2026-11-10 09:17:00,宁波恒达,BW-002,涂层厚度,443,4,局部脱落,LOT1110\n2026-11-10 09:52:00,宁波恒达,BW-003,重量,364,1,超重,LOT1110\n2026-11-10 09:38:00,宁波恒达,BW-003,外观,415,1,气孔,LOT1110\n2026-11-10 09:18:00,宁波恒达,BW-003,孔位度,364,3,孔径超差,LOT1110\n2026-11-10 09:34:00,宁波恒达,BW-003,涂层厚度,398,2,局部脱落,LOT1110\n2026-11-10 09:19:00,青岛金属,BW-001,重量,420,1,超重,LOT1110\n2026-11-10 09:33:00,青岛金属,BW-001,外观,473,3,气孔,LOT1110\n2026-11-10 09:03:00,青岛金属,BW-001,孔位度,388,1,位置偏移,LOT1110\n2026-11-10 09:03:00,青岛金属,BW-001,涂层厚度,383,0,,LOT1110\n2026-11-10 09:36:00,青岛金属,BW-002,重量,451,3,偏轻,LOT1110\n2026-11-10 09:32:00,青岛金属,BW-002,外观,412,2,气孔,LOT1110\n2026-11-10 09:10:00,青岛金属,BW-002,孔位度,476,3,孔径超差,LOT1110\n2026-11-10 09:33:00,青岛金属,BW-002,涂层厚度,501,1,膜厚不足,LOT1110\n2026-11-10 09:20:00,青岛金属,BW-003,重量,406,1,超重,LOT1110\n2026-11-10 09:48:00,青岛金属,BW-003,外观,400,2,气孔,LOT1110\n2026-11-10 09:47:00,青岛金属,BW-003,孔位度,517,4,孔径超差,LOT1110\n2026-11-10 09:43:00,青岛金属,BW-003,涂层厚度,433,3,膜厚不足,LOT1110\n2026-11-10 10:22:00,苏州精工,BW-001,重量,358,2,偏轻,LOT1110\n2026-11-10 10:09:00,苏州精工,BW-001,外观,398,1,气孔,LOT1110\n2026-11-10 10:55:00,苏州精工,BW-001,孔位度,316,2,位置偏移,LOT1110\n2026-11-10 10:54:00,苏州精工,BW-001,涂层厚度,292,1,局部脱落,LOT1110\n2026-11-10 10:19:00,苏州精工,BW-002,重量,330,1,超重,LOT1110\n2026-11-10 10:53:00,苏州精工,BW-002,外观,360,1,划伤,LOT1110\n2026-11-10 10:27:00,苏州精工,BW-002,孔位度,408,2,孔径超差,LOT1110\n2026-11-10 10:21:00,苏州精工,BW-002,涂层厚度,361,1,局部脱落,LOT1110\n2026-11-10 10:19:00,苏州精工,BW-003,重量,400,2,偏轻,LOT1110\n2026-11-10 10:09:00,苏州精工,BW-003,外观,405,1,气孔,LOT1110\n2026-11-10 10:40:00,苏州精工,BW-003,孔位度,379,2,孔径超差,LOT1110\n2026-11-10 10:14:00,苏州精工,BW-003,涂层厚度,331,2,膜厚不足,LOT1110\n2026-11-10 10:54:00,宁波恒达,BW-001,重量,346,2,超重,LOT1110\n2026-11-10 10:01:00,宁波恒达,BW-001,外观,368,2,划伤,LOT1110\n2026-11-10 10:41:00,宁波恒达,BW-001,孔位度,379,3,位置偏移,LOT1110\n2026-11-10 10:17:00,宁波恒达,BW-001,涂层厚度,346,3,膜厚不足,LOT1110\n2026-11-10 10:31:00,宁波恒达,BW-002,重量,378,1,偏轻,LOT1110\n2026-11-10 10:17:00,宁波恒达,BW-002,外观,427,1,划伤,LOT1110\n2026-11-10 10:21:00,宁波恒达,BW-002,孔位度,465,4,位置偏移,LOT1110\n2026-11-10 10:41:00,宁波恒达,BW-002,涂层厚度,378,3,膜厚不足,LOT1110\n2026-11-10 10:43:00,宁波恒达,BW-003,重量,438,3,超重,LOT1110\n2026-11-10 10:50:00,宁波恒达,BW-003,外观,441,3,划伤,LOT1110\n2026-11-10 10:35:00,宁波恒达,BW-003,孔位度,362,2,位置偏移,LOT1110\n2026-11-10 10:46:00,宁波恒达,BW-003,涂层厚度,478,3,局部脱落,LOT1110\n2026-11-10 10:20:00,青岛金属,BW-001,重量,456,4,超重,LOT1110\n2026-11-10 10:40:00,青岛金属,BW-001,外观,377,3,划伤,LOT1110\n2026-11-10 10:48:00,青岛金属,BW-001,孔位度,428,3,位置偏移,LOT1110\n2026-11-10 10:14:00,青岛金属,BW-001,涂层厚度,407,3,膜厚不足,LOT1110\n2026-11-10 10:30:00,青岛金属,BW-002,重量,453,2,超重,LOT1110\n2026-11-10 10:40:00,青岛金属,BW-002,外观,388,3,划伤,LOT1110\n2026-11-10 10:25:00,青岛金属,BW-002,孔位度,399,1,孔径超差,LOT1110\n2026-11-10 10:41:00,青岛金属,BW-002,涂层厚度,434,3,膜厚不足,LOT1110\n2026-11-10 10:51:00,青岛金属,BW-003,重量,412,1,超重,LOT1110\n2026-11-10 10:20:00,青岛金属,BW-003,外观,510,1,划伤,LOT1110\n2026-11-10 10:22:00,青岛金属,BW-003,孔位度,453,1,位置偏移,LOT1110\n2026-11-10 10:06:00,青岛金属,BW-003,涂层厚度,459,2,局部脱落,LOT1110\n2026-11-10 11:28:00,苏州精工,BW-001,重量,330,2,偏轻,LOT1110\n2026-11-10 11:56:00,苏州精工,BW-001,外观,391,3,气孔,LOT1110\n2026-11-10 11:29:00,苏州精工,BW-001,孔位度,303,2,位置偏移,LOT1110\n2026-11-10 11:35:00,苏州精工,BW-001,涂层厚度,355,3,局部脱落,LOT1110\n2026-11-10 11:43:00,苏州精工,BW-002,重量,335,1,偏轻,LOT1110\n2026-11-10 11:44:00,苏州精工,BW-002,外观,420,1,气孔,LOT1110\n2026-11-10 11:48:00,苏州精工,BW-002,孔位度,338,3,孔径超差,LOT1110\n2026-11-10 11:37:00,苏州精工,BW-002,涂层厚度,394,1,局部脱落,LOT1110\n2026-11-10 11:49:00,苏州精工,BW-003,重量,329,1,超重,LOT1110\n2026-11-10 11:39:00,苏州精工,BW-003,外观,357,2,气孔,LOT1110\n2026-11-10 11:21:00,苏州精工,BW-003,孔位度,375,2,孔径超差,LOT1110\n2026-11-10 11:41:00,苏州精工,BW-003,涂层厚度,432,2,膜厚不足,LOT1110\n2026-11-10 11:19:00,宁波恒达,BW-001,重量,380,2,超重,LOT1110\n2026-11-10 11:59:00,宁波恒达,BW-001,外观,333,2,划伤,LOT1110\n2026-11-10 11:55:00,宁波恒达,BW-001,孔位度,332,1,位置偏移,LOT1110\n2026-11-10 11:32:00,宁波恒达,BW-001,涂层厚度,450,1,局部脱落,LOT1110\n2026-11-10 11:33:00,宁波恒达,BW-002,重量,381,1,偏轻,LOT1110\n2026-11-10 11:14:00,宁波恒达,BW-002,外观,395,2,气孔,LOT1110\n2026-11-10 11:27:00,宁波恒达,BW-002,孔位度,372,3,位置偏移,LOT1110\n2026-11-10 11:10:00,宁波恒达,BW-002,涂层厚度,392,2,局部脱落,LOT1110\n2026-11-10 11:05:00,宁波恒达,BW-003,重量,483,2,超重,LOT1110\n2026-11-10 11:52:00,宁波恒达,BW-003,外观,449,3,划伤,LOT1110\n2026-11-10 11:34:00,宁波恒达,BW-003,孔位度,432,3,孔径超差,LOT1110\n2026-11-10 11:56:00,宁波恒达,BW-003,涂层厚度,451,3,局部脱落,LOT1110\n2026-11-10 11:06:00,青岛金属,BW-001,重量,362,1,超重,LOT1110\n2026-11-10 11:24:00,青岛金属,BW-001,外观,441,2,气孔,LOT1110\n2026-11-10 11:43:00,青岛金属,BW-001,孔位度,385,3,位置偏移,LOT1110\n2026-11-10 11:43:00,青岛金属,BW-001,涂层厚度,399,3,膜厚不足,LOT1110\n2026-11-10 11:04:00,青岛金属,BW-002,重量,457,4,超重,LOT1110\n2026-11-10 11:56:00,青岛金属,BW-002,外观,504,2,划伤,LOT1110\n2026-11-10 11:13:00,青岛金属,BW-002,孔位度,430,2,孔径超差,LOT1110\n2026-11-10 11:16:00,青岛金属,BW-002,涂层厚度,489,4,膜厚不足,LOT1110\n2026-11-10 11:39:00,青岛金属,BW-003,重量,417,4,超重,LOT1110\n2026-11-10 11:54:00,青岛金属,BW-003,外观,400,2,划伤,LOT1110\n2026-11-10 11:21:00,青岛金属,BW-003,孔位度,485,3,位置偏移,LOT1110\n2026-11-10 11:27:00,青岛金属,BW-003,涂层厚度,420,3,局部脱落,LOT1110\n2026-11-10 12:25:00,苏州精工,BW-001,重量,343,1,超重,LOT1110\n2026-11-10 12:26:00,苏州精工,BW-001,外观,300,2,气孔,LOT1110\n2026-11-10 12:08:00,苏州精工,BW-001,孔位度,366,2,位置偏移,LOT1110\n2026-11-10 12:51:00,苏州精工,BW-001,涂层厚度,317,3,膜厚不足,LOT1110\n2026-11-10 12:11:00,苏州精工,BW-002,重量,344,2,偏轻,LOT1110\n2026-11-10 12:11:00,苏州精工,BW-002,外观,360,1,划伤,LOT1110\n2026-11-10 12:21:00,苏州精工,BW-002,孔位度,350,1,孔径超差,LOT1110\n2026-11-10 12:03:00,苏州精工,BW-002,涂层厚度,406,0,,LOT1110\n2026-11-10 12:59:00,苏州精工,BW-003,重量,438,2,偏轻,LOT1110\n2026-11-10 12:44:00,苏州精工,BW-003,外观,436,3,划伤,LOT1110\n2026-11-10 12:19:00,苏州精工,BW-003,孔位度,398,2,孔径超差,LOT1110\n2026-11-10 12:35:00,苏州精工,BW-003,涂层厚度,334,2,膜厚不足,LOT1110\n2026-11-10 12:11:00,宁波恒达,BW-001,重量,365,2,偏轻,LOT1110\n2026-11-10 12:01:00,宁波恒达,BW-001,外观,409,1,气孔,LOT1110\n2026-11-10 12:04:00,宁波恒达,BW-001,孔位度,358,1,孔径超差,LOT1110\n2026-11-10 12:59:00,宁波恒达,BW-001,涂层厚度,411,1,局部脱落,LOT1110\n2026-11-10 12:14:00,宁波恒达,BW-002,重量,398,2,偏轻,LOT1110\n2026-11-10 12:50:00,宁波恒达,BW-002,外观,361,1,划伤,LOT1110\n2026-11-10 12:44:00,宁波恒达,BW-002,孔位度,452,2,孔径超差,LOT1110\n2026-11-10 12:32:00,宁波恒达,BW-002,涂层厚度,465,4,局部脱落,LOT1110\n2026-11-10 12:33:00,宁波恒达,BW-003,重量,393,2,偏轻,LOT1110\n2026-11-10 12:31:00,宁波恒达,BW-003,外观,447,4,气孔,LOT1110\n2026-11-10 12:53:00,宁波恒达,BW-003,孔位度,385,2,孔径超差,LOT1110\n2026-11-10 12:27:00,宁波恒达,BW-003,涂层厚度,416,1,局部脱落,LOT1110\n2026-11-10 12:41:00,青岛金属,BW-001,重量,446,3,超重,LOT1110\n2026-11-10 12:01:00,青岛金属,BW-001,外观,417,1,气孔,LOT1110\n2026-11-10 12:02:00,青岛金属,BW-001,孔位度,380,3,孔径超差,LOT1110\n2026-11-10 12:53:00,青岛金属,BW-001,涂层厚度,415,1,局部脱落,LOT1110\n2026-11-10 12:41:00,青岛金属,BW-002,重量,419,2,超重,LOT1110\n2026-11-10 12:03:00,青岛金属,BW-002,外观,392,3,划伤,LOT1110\n2026-11-10 12:44:00,青岛金属,BW-002,孔位度,466,2,位置偏移,LOT1110\n2026-11-10 12:29:00,青岛金属,BW-002,涂层厚度,442,2,膜厚不足,LOT1110\n2026-11-10 12:44:00,青岛金属,BW-003,重量,426,1,偏轻,LOT1110\n2026-11-10 12:42:00,青岛金属,BW-003,外观,485,2,划伤,LOT1110\n2026-11-10 12:29:00,青岛金属,BW-003,孔位度,515,4,孔径超差,LOT1110\n2026-11-10 12:53:00,青岛金属,BW-003,涂层厚度,495,4,局部脱落,LOT1110\n2026-11-10 13:33:00,苏州精工,BW-001,重量,298,2,偏轻,LOT1110\n2026-11-10 13:09:00,苏州精工,BW-001,外观,410,2,气孔,LOT1110\n2026-11-10 13:21:00,苏州精工,BW-001,孔位度,319,1,位置偏移,LOT1110\n2026-11-10 13:53:00,苏州精工,BW-001,涂层厚度,329,1,膜厚不足,LOT1110\n2026-11-10 13:36:00,苏州精工,BW-002,重量,412,3,偏轻,LOT1110\n2026-11-10 13:22:00,苏州精工,BW-002,外观,323,2,划伤,LOT1110\n2026-11-10 13:29:00,苏州精工,BW-002,孔位度,312,1,孔径超差,LOT1110\n2026-11-10 13:32:00,苏州精工,BW-002,涂层厚度,419,1,膜厚不足,LOT1110\n2026-11-10 13:26:00,苏州精工,BW-003,重量,351,1,超重,LOT1110\n2026-11-10 13:58:00,苏州精工,BW-003,外观,353,0,,LOT1110\n2026-11-10 13:27:00,苏州精工,BW-003,孔位度,435,2,孔径超差,LOT1110\n2026-11-10 13:21:00,苏州精工,BW-003,涂层厚度,323,2,局部脱落,LOT1110\n2026-11-10 13:23:00,宁波恒达,BW-001,重量,438,3,超重,LOT1110\n2026-11-10 13:34:00,宁波恒达,BW-001,外观,376,1,气孔,LOT1110\n2026-11-10 13:14:00,宁波恒达,BW-001,孔位度,387,1,孔径超差,LOT1110\n2026-11-10 13:32:00,宁波恒达,BW-001,涂层厚度,423,3,膜厚不足,LOT1110\n2026-11-10 13:05:00,宁波恒达,BW-002,重量,386,2,偏轻,LOT1110\n2026-11-10 13:19:00,宁波恒达,BW-002,外观,365,3,气孔,LOT1110\n2026-11-10 13:42:00,宁波恒达,BW-002,孔位度,342,3,孔径超差,LOT1110\n2026-11-10 13:07:00,宁波恒达,BW-002,涂层厚度,368,2,局部脱落,LOT1110\n2026-11-10 13:39:00,宁波恒达,BW-003,重量,395,2,偏轻,LOT1110\n2026-11-10 13:23:00,宁波恒达,BW-003,外观,375,2,划伤,LOT1110\n2026-11-10 13:54:00,宁波恒达,BW-003,孔位度,488,4,孔径超差,LOT1110\n2026-11-10 13:30:00,宁波恒达,BW-003,涂层厚度,428,3,膜厚不足,LOT1110\n2026-11-10 13:55:00,青岛金属,BW-001,重量,466,1,偏轻,LOT1110\n2026-11-10 13:55:00,青岛金属,BW-001,外观,471,1,划伤,LOT1110\n2026-11-10 13:53:00,青岛金属,BW-001,孔位度,457,2,位置偏移,LOT1110\n2026-11-10 13:59:00,青岛金属,BW-001,涂层厚度,434,1,局部脱落,LOT1110\n2026-11-10 13:02:00,青岛金属,BW-002,重量,434,2,超重,LOT1110\n2026-11-10 13:29:00,青岛金属,BW-002,外观,393,3,气孔,LOT1110\n2026-11-10 13:55:00,青岛金属,BW-002,孔位度,395,1,位置偏移,LOT1110\n2026-11-10 13:53:00,青岛金属,BW-002,涂层厚度,482,2,局部脱落,LOT1110\n2026-11-10 13:32:00,青岛金属,BW-003,重量,485,2,偏轻,LOT1110\n2026-11-10 13:53:00,青岛金属,BW-003,外观,478,2,划伤,LOT1110\n2026-11-10 13:15:00,青岛金属,BW-003,孔位度,417,4,位置偏移,LOT1110\n2026-11-10 13:41:00,青岛金属,BW-003,涂层厚度,527,4,膜厚不足,LOT1110\n2026-11-10 14:07:00,苏州精工,BW-001,重量,600,18,超重,LOT1110\n2026-11-10 14:56:00,苏州精工,BW-001,外观,368,3,划伤,LOT1110\n2026-11-10 14:54:00,苏州精工,BW-001,孔位度,360,1,位置偏移,LOT1110\n2026-11-10 14:15:00,苏州精工,BW-001,涂层厚度,399,2,局部脱落,LOT1110\n2026-11-10 14:16:00,苏州精工,BW-002,重量,311,2,超重,LOT1110\n2026-11-10 14:21:00,苏州精工,BW-002,外观,306,2,划伤,LOT1110\n2026-11-10 14:56:00,苏州精工,BW-002,孔位度,316,0,,LOT1110\n2026-11-10 14:31:00,苏州精工,BW-002,涂层厚度,334,3,膜厚不足,LOT1110\n2026-11-10 14:51:00,苏州精工,BW-003,重量,402,2,偏轻,LOT1110\n2026-11-10 14:40:00,苏州精工,BW-003,外观,415,2,气孔,LOT1110\n2026-11-10 14:55:00,苏州精工,BW-003,孔位度,411,3,孔径超差,LOT1110\n2026-11-10 14:37:00,苏州精工,BW-003,涂层厚度,400,2,膜厚不足,LOT1110\n2026-11-10 14:13:00,宁波恒达,BW-001,重量,600,18,超重,LOT1110\n2026-11-10 14:19:00,宁波恒达,BW-001,外观,381,0,,LOT1110\n2026-11-10 14:38:00,宁波恒达,BW-001,孔位度,357,1,位置偏移,LOT1110\n2026-11-10 14:32:00,宁波恒达,BW-001,涂层厚度,364,2,膜厚不足,LOT1110\n2026-11-10 14:42:00,宁波恒达,BW-002,重量,388,2,超重,LOT1110\n2026-11-10 14:24:00,宁波恒达,BW-002,外观,451,4,气孔,LOT1110\n2026-11-10 14:37:00,宁波恒达,BW-002,孔位度,345,2,孔径超差,LOT1110\n2026-11-10 14:40:00,宁波恒达,BW-002,涂层厚度,385,3,膜厚不足,LOT1110\n2026-11-10 14:04:00,宁波恒达,BW-003,重量,361,0,,LOT1110\n2026-11-10 14:51:00,宁波恒达,BW-003,外观,380,2,划伤,LOT1110\n2026-11-10 14:53:00,宁波恒达,BW-003,孔位度,471,2,位置偏移,LOT1110\n2026-11-10 14:21:00,宁波恒达,BW-003,涂层厚度,450,3,膜厚不足,LOT1110\n2026-11-10 14:15:00,青岛金属,BW-001,重量,600,18,超重,LOT1110\n2026-11-10 14:41:00,青岛金属,BW-001,外观,396,2,划伤,LOT1110\n2026-11-10 14:38:00,青岛金属,BW-001,孔位度,362,2,位置偏移,LOT1110\n2026-11-10 14:21:00,青岛金属,BW-001,涂层厚度,369,3,局部脱落,LOT1110\n2026-11-10 14:09:00,青岛金属,BW-002,重量,387,2,超重,LOT1110\n2026-11-10 14:20:00,青岛金属,BW-002,外观,392,2,划伤,LOT1110\n2026-11-10 14:41:00,青岛金属,BW-002,孔位度,438,3,位置偏移,LOT1110\n2026-11-10 14:44:00,青岛金属,BW-002,涂层厚度,478,1,膜厚不足,LOT1110\n2026-11-10 14:22:00,青岛金属,BW-003,重量,406,3,超重,LOT1110\n2026-11-10 14:35:00,青岛金属,BW-003,外观,419,1,气孔,LOT1110\n2026-11-10 14:16:00,青岛金属,BW-003,孔位度,521,2,位置偏移,LOT1110\n2026-11-10 14:31:00,青岛金属,BW-003,涂层厚度,473,3,膜厚不足,LOT1110\n2026-11-10 15:02:00,苏州精工,BW-001,重量,296,1,偏轻,LOT1110\n2026-11-10 15:08:00,苏州精工,BW-001,外观,282,2,划伤,LOT1110\n2026-11-10 15:01:00,苏州精工,BW-001,孔位度,369,3,孔径超差,LOT1110\n2026-11-10 15:35:00,苏州精工,BW-001,涂层厚度,357,2,局部脱落,LOT1110\n2026-11-10 15:23:00,苏州精工,BW-002,重量,317,2,超重,LOT1110\n2026-11-10 15:39:00,苏州精工,BW-002,外观,372,1,气孔,LOT1110\n2026-11-10 15:48:00,苏州精工,BW-002,孔位度,357,1,孔径超差,LOT1110\n2026-11-10 15:47:00,苏州精工,BW-002,涂层厚度,301,1,膜厚不足,LOT1110\n2026-11-10 15:26:00,苏州精工,BW-003,重量,367,1,超重,LOT1110\n2026-11-10 15:22:00,苏州精工,BW-003,外观,364,1,气孔,LOT1110\n2026-11-10 15:08:00,苏州精工,BW-003,孔位度,444,1,位置偏移,LOT1110\n2026-11-10 15:41:00,苏州精工,BW-003,涂层厚度,379,0,,LOT1110\n2026-11-10 15:50:00,宁波恒达,BW-001,重量,367,2,超重,LOT1110\n2026-11-10 15:15:00,宁波恒达,BW-001,外观,432,2,划伤,LOT1110\n2026-11-10 15:06:00,宁波恒达,BW-001,孔位度,341,2,孔径超差,LOT1110\n2026-11-10 15:43:00,宁波恒达,BW-001,涂层厚度,320,1,膜厚不足,LOT1110\n2026-11-10 15:09:00,宁波恒达,BW-002,重量,426,1,偏轻,LOT1110\n2026-11-10 15:46:00,宁波恒达,BW-002,外观,433,1,气孔,LOT1110\n2026-11-10 15:42:00,宁波恒达,BW-002,孔位度,368,1,位置偏移,LOT1110\n2026-11-10 15:01:00,宁波恒达,BW-002,涂层厚度,402,2,膜厚不足,LOT1110\n2026-11-10 15:33:00,宁波恒达,BW-003,重量,443,4,偏轻,LOT1110\n2026-11-10 15:14:00,宁波恒达,BW-003,外观,373,3,划伤,LOT1110\n2026-11-10 15:27:00,宁波恒达,BW-003,孔位度,425,3,位置偏移,LOT1110\n2026-11-10 15:24:00,宁波恒达,BW-003,涂层厚度,480,3,膜厚不足,LOT1110\n2026-11-10 15:30:00,青岛金属,BW-001,重量,483,2,偏轻,LOT1110\n2026-11-10 15:05:00,青岛金属,BW-001,外观,443,3,划伤,LOT1110\n2026-11-10 15:11:00,青岛金属,BW-001,孔位度,420,3,位置偏移,LOT1110\n2026-11-10 15:11:00,青岛金属,BW-001,涂层厚度,469,4,膜厚不足,LOT1110\n2026-11-10 15:17:00,青岛金属,BW-002,重量,438,1,超重,LOT1110\n2026-11-10 15:09:00,青岛金属,BW-002,外观,393,1,划伤,LOT1110\n2026-11-10 15:51:00,青岛金属,BW-002,孔位度,504,3,孔径超差,LOT1110\n2026-11-10 15:45:00,青岛金属,BW-002,涂层厚度,408,3,膜厚不足,LOT1110\n2026-11-10 15:20:00,青岛金属,BW-003,重量,526,1,偏轻,LOT1110\n2026-11-10 15:58:00,青岛金属,BW-003,外观,471,3,划伤,LOT1110\n2026-11-10 15:50:00,青岛金属,BW-003,孔位度,467,1,位置偏移,LOT1110\n2026-11-10 15:34:00,青岛金属,BW-003,涂层厚度,513,1,膜厚不足,LOT1110\n2026-11-10 16:51:00,苏州精工,BW-001,重量,323,3,偏轻,LOT1110\n2026-11-10 16:52:00,苏州精工,BW-001,外观,296,2,划伤,LOT1110\n2026-11-10 16:03:00,苏州精工,BW-001,孔位度,302,1,位置偏移,LOT1110\n2026-11-10 16:22:00,苏州精工,BW-001,涂层厚度,390,1,局部脱落,LOT1110\n2026-11-10 16:12:00,苏州精工,BW-002,重量,366,2,超重,LOT1110\n2026-11-10 16:05:00,苏州精工,BW-002,外观,304,0,,LOT1110\n2026-11-10 16:08:00,苏州精工,BW-002,孔位度,340,1,位置偏移,LOT1110\n2026-11-10 16:08:00,苏州精工,BW-002,涂层厚度,363,2,局部脱落,LOT1110\n2026-11-10 16:43:00,苏州精工,BW-003,重量,380,2,偏轻,LOT1110\n2026-11-10 16:22:00,苏州精工,BW-003,外观,426,3,气孔,LOT1110\n2026-11-10 16:08:00,苏州精工,BW-003,孔位度,334,3,位置偏移,LOT1110\n2026-11-10 16:50:00,苏州精工,BW-003,涂层厚度,323,2,膜厚不足,LOT1110\n2026-11-10 16:48:00,宁波恒达,BW-001,重量,326,1,超重,LOT1110\n2026-11-10 16:32:00,宁波恒达,BW-001,外观,446,2,划伤,LOT1110\n2026-11-10 16:22:00,宁波恒达,BW-001,孔位度,409,3,孔径超差,LOT1110\n2026-11-10 16:51:00,宁波恒达,BW-001,涂层厚度,327,1,局部脱落,LOT1110\n2026-11-10 16:20:00,宁波恒达,BW-002,重量,407,1,偏轻,LOT1110\n2026-11-10 16:13:00,宁波恒达,BW-002,外观,470,2,划伤,LOT1110\n2026-11-10 16:22:00,宁波恒达,BW-002,孔位度,392,1,孔径超差,LOT1110\n2026-11-10 16:57:00,宁波恒达,BW-002,涂层厚度,431,3,局部脱落,LOT1110\n2026-11-10 16:29:00,宁波恒达,BW-003,重量,411,3,偏轻,LOT1110\n2026-11-10 16:47:00,宁波恒达,BW-003,外观,379,1,划伤,LOT1110\n2026-11-10 16:50:00,宁波恒达,BW-003,孔位度,411,2,孔径超差,LOT1110\n2026-11-10 16:14:00,宁波恒达,BW-003,涂层厚度,437,1,局部脱落,LOT1110\n2026-11-10 16:02:00,青岛金属,BW-001,重量,415,1,偏轻,LOT1110\n2026-11-10 16:14:00,青岛金属,BW-001,外观,396,2,划伤,LOT1110\n2026-11-10 16:37:00,青岛金属,BW-001,孔位度,385,3,位置偏移,LOT1110\n2026-11-10 16:34:00,青岛金属,BW-001,涂层厚度,377,1,膜厚不足,LOT1110\n2026-11-10 16:22:00,青岛金属,BW-002,重量,477,3,偏轻,LOT1110\n2026-11-10 16:17:00,青岛金属,BW-002,外观,470,3,划伤,LOT1110\n2026-11-10 16:58:00,青岛金属,BW-002,孔位度,478,3,位置偏移,LOT1110\n2026-11-10 16:27:00,青岛金属,BW-002,涂层厚度,455,0,,LOT1110\n2026-11-10 16:24:00,青岛金属,BW-003,重量,524,2,超重,LOT1110\n2026-11-10 16:57:00,青岛金属,BW-003,外观,484,4,划伤,LOT1110\n2026-11-10 16:43:00,青岛金属,BW-003,孔位度,499,4,孔径超差,LOT1110\n2026-11-10 16:03:00,青岛金属,BW-003,涂层厚度,402,1,膜厚不足,LOT1110\n2026-11-10 17:33:00,苏州精工,BW-001,重量,391,3,偏轻,LOT1110\n2026-11-10 17:59:00,苏州精工,BW-001,外观,385,1,气孔,LOT1110\n2026-11-10 17:15:00,苏州精工,BW-001,孔位度,311,2,位置偏移,LOT1110\n2026-11-10 17:15:00,苏州精工,BW-001,涂层厚度,348,1,局部脱落,LOT1110\n2026-11-10 17:17:00,苏州精工,BW-002,重量,394,1,超重,LOT1110\n2026-11-10 17:39:00,苏州精工,BW-002,外观,358,2,气孔,LOT1110\n2026-11-10 17:55:00,苏州精工,BW-002,孔位度,381,1,孔径超差,LOT1110\n2026-11-10 17:54:00,苏州精工,BW-002,涂层厚度,429,1,局部脱落,LOT1110\n2026-11-10 17:14:00,苏州精工,BW-003,重量,384,1,偏轻,LOT1110\n2026-11-10 17:57:00,苏州精工,BW-003,外观,356,2,划伤,LOT1110\n2026-11-10 17:23:00,苏州精工,BW-003,孔位度,340,1,位置偏移,LOT1110\n2026-11-10 17:21:00,苏州精工,BW-003,涂层厚度,379,1,膜厚不足,LOT1110\n2026-11-10 17:59:00,宁波恒达,BW-001,重量,388,2,超重,LOT1110\n2026-11-10 17:34:00,宁波恒达,BW-001,外观,415,1,气孔,LOT1110\n2026-11-10 17:55:00,宁波恒达,BW-001,孔位度,436,2,位置偏移,LOT1110\n2026-11-10 17:22:00,宁波恒达,BW-001,涂层厚度,324,1,膜厚不足,LOT1110\n2026-11-10 17:03:00,宁波恒达,BW-002,重量,375,3,偏轻,LOT1110\n2026-11-10 17:59:00,宁波恒达,BW-002,外观,352,2,气孔,LOT1110\n2026-11-10 17:36:00,宁波恒达,BW-002,孔位度,357,1,位置偏移,LOT1110\n2026-11-10 17:03:00,宁波恒达,BW-002,涂层厚度,381,2,膜厚不足,LOT1110\n2026-11-10 17:54:00,宁波恒达,BW-003,重量,382,3,超重,LOT1110\n2026-11-10 17:14:00,宁波恒达,BW-003,外观,465,3,划伤,LOT1110\n2026-11-10 17:26:00,宁波恒达,BW-003,孔位度,384,1,孔径超差,LOT1110\n2026-11-10 17:02:00,宁波恒达,BW-003,涂层厚度,465,4,膜厚不足,LOT1110\n2026-11-10 17:58:00,青岛金属,BW-001,重量,414,2,超重,LOT1110\n2026-11-10 17:34:00,青岛金属,BW-001,外观,468,3,气孔,LOT1110\n2026-11-10 17:40:00,青岛金属,BW-001,孔位度,458,2,位置偏移,LOT1110\n2026-11-10 17:21:00,青岛金属,BW-001,涂层厚度,438,4,膜厚不足,LOT1110\n2026-11-10 17:03:00,青岛金属,BW-002,重量,404,1,偏轻,LOT1110\n2026-11-10 17:03:00,青岛金属,BW-002,外观,432,4,气孔,LOT1110\n2026-11-10 17:03:00,青岛金属,BW-002,孔位度,383,1,位置偏移,LOT1110\n2026-11-10 17:23:00,青岛金属,BW-002,涂层厚度,395,3,膜厚不足,LOT1110\n2026-11-10 17:07:00,青岛金属,BW-003,重量,489,1,超重,LOT1110\n2026-11-10 17:24:00,青岛金属,BW-003,外观,522,4,划伤,LOT1110\n2026-11-10 17:35:00,青岛金属,BW-003,孔位度,479,3,位置偏移,LOT1110\n2026-11-10 17:46:00,青岛金属,BW-003,涂层厚度,464,3,局部脱落,LOT1110";
+(function(){
+  try{
+    const n = ingest(DEMO_CSV, "演示数据.csv");
+    if(n > 0){
+      refresh();
+      $("#fFiles").textContent = "演示数据（合成）";
+      $("#fLive").textContent = "";
+      $("#status").textContent = "演示数据 · " + n + " 条记录";
+    }
+  }catch(e){ console.warn(e); }
+})();
+</script>
+</body>
+</html>
