@@ -540,16 +540,25 @@ function openNode(sup, item){
   if(!rs.length) return;
   const prod=rs.reduce((a,r)=>a+r.prod,0), def=rs.reduce((a,r)=>a+r.defect,0);
   $("#mTitle").textContent = `${sup} · ${item}`;
-  $("#mSub").textContent = `生产 ${fmt(prod)}｜不良 ${fmt(def)}｜不良率 ${pct(rate(def,prod))}｜阈值 ${(S.limit*100).toFixed(2)}%｜${rs.length} 条记录`;
-  const byH = new Map();
-  rs.forEach(r=>{ if(!byH.has(r.hour)) byH.set(r.hour,{prod:0,defect:0,n:0});
-    const o=byH.get(r.hour); o.prod+=r.prod; o.defect+=r.defect; o.n++; });
-  const rows=[...byH.entries()].sort((a,b)=>a[0]-b[0]).map(([h,o])=>{
-    const rt=rate(o.defect,o.prod), bad=rt>S.limit;
-    return `<tr class="${bad?'bad':''}"><td>${String(h).padStart(2,"0")}:00</td><td>${o.n}</td>
-      <td>${fmt(o.prod)}</td><td>${fmt(o.defect)}</td><td style="color:${bad?'var(--over)':'inherit'};font-weight:${bad?'700':'400'}">${pct(rt)}</td></tr>`;
+  $("#mSub").textContent = `生产 ${fmt(prod)}｜不良 ${fmt(def)}｜当日不良率 ${pct(rate(def,prod))}｜阈值 ${(S.limit*100).toFixed(2)}%`;
+  const byC = new Map();
+  rs.forEach(r=>{
+    const k=r.hour+"|"+r.code;
+    if(!byC.has(k)) byC.set(k,{hour:r.hour, code:r.code, prod:0, defect:0, n:0});
+    const o=byC.get(k); o.prod+=r.prod; o.defect+=r.defect; o.n++;
+  });
+  const arr=[...byC.values()].map(o=>({...o, rate:rate(o.defect,o.prod)}))
+    .sort((a,b)=> a.hour-b.hour || String(a.code).localeCompare(String(b.code)));
+  const peak = Math.max(...arr.filter(x=>x.prod>=S.minSample).map(x=>x.rate), 0);
+  const rows = arr.map(o=>{
+    const bad = o.prod>=S.minSample && o.rate > S.limit;
+    const isPeak = o.prod>=S.minSample && Math.abs(o.rate-peak) < 1e-9;
+    return `<tr class="${bad?'bad':''}"><td>${String(o.hour).padStart(2,"0")}:00${isPeak?' <span style="color:var(--over);font-weight:700;font-size:10.5px">峰值</span>':''}</td>
+      <td>${esc(o.code)}</td><td>${o.n}</td><td>${fmt(o.prod)}</td><td>${fmt(o.defect)}</td>
+      <td style="color:${bad?'var(--over)':'inherit'};font-weight:${bad?'700':'400'}">${pct(o.rate)}</td></tr>`;
   }).join("");
-  $("#mBody").innerHTML = `<table><thead><tr><th>时段</th><th>记录</th><th>生产数</th><th>不良数</th><th>不良率</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $("#mBody").innerHTML = `<table><thead><tr><th>时段</th><th>CODE</th><th>记录</th>
+    <th>生产数</th><th>不良数</th><th>不良率</th></tr></thead><tbody>${rows}</tbody></table>`;
   $("#mask").classList.add("on");
 }
 $("#mClose").onclick = ()=>$("#mask").classList.remove("on");
