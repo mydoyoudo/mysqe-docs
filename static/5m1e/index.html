@@ -85,6 +85,18 @@
   .misschip{background:#fdecec;color:#b91c1c;border:1px solid #f7d4d4;border-radius:999px;
     padding:4px 11px;font-size:12px}
   .misschip.none{background:#e7f8f1;color:#067952;border-color:#cdeee0}
+  /* ---- 每日明细 / 周趋势 ---- */
+  .tblwrap{overflow:auto;max-height:520px}
+  td.r-hi{background:#e7f8f1;color:#067952;font-weight:600}
+  td.r-mid{background:#fff6e5;color:#8a5300;font-weight:600}
+  td.r-lo{background:#fdecec;color:#b91c1c;font-weight:600}
+  .tblwrap td,.tblwrap th{white-space:nowrap}
+  .tblwrap thead th{position:sticky;top:0;z-index:2;background:#fafbfc}
+  .tblwrap td.nmcell{white-space:normal;min-width:360px;line-height:1.9}
+  .nmchip{display:inline-block;white-space:nowrap;background:#f3f5f9;border:1px solid #e6eaf0;
+    border-radius:6px;padding:1px 6px;margin:2px 4px 2px 0;font-size:11.5px;color:#4b5563}
+  .morebtn{font:inherit;font-size:11.5px;color:#3b82f6;background:none;border:0;cursor:pointer;padding:2px 4px}
+  .morebtn:hover{text-decoration:underline}
 
 </style>
 </head>
@@ -143,6 +155,37 @@
     <div class="panel">
       <h2>每日打卡率 <span class="count" id="jlRange"></span></h2>
       <div id="jlTrend" style="padding:14px 16px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>每日明细 <span class="count" id="jlDailyCount"></span>
+        <span style="margin-left:auto">
+          <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px">
+            <input type="checkbox" id="jlWorkOnly" style="accent-color:#1f2937"> 只看工作日
+          </label>
+        </span>
+      </h2>
+      <div class="tblwrap">
+        <table>
+          <thead><tr>
+            <th style="width:96px">日期</th><th style="width:60px">星期</th>
+            <th style="width:66px">工作日</th><th style="width:70px">已打卡</th>
+            <th style="width:70px">应打卡</th><th style="width:62px">缺卡</th>
+            <th style="width:78px">打卡率</th><th>缺卡名单</th>
+          </tr></thead>
+          <tbody id="jlDaily"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>每周趋势 <span class="count">只统计工作日</span></h2>
+      <table>
+        <thead><tr><th style="width:190px">周起止</th><th style="width:70px">工作日</th>
+          <th style="width:80px">应打卡</th><th style="width:80px">实打卡</th>
+          <th style="width:80px">出勤率</th><th>备注</th></tr></thead>
+        <tbody id="jlWeeks"></tbody>
+      </table>
     </div>
 
     <div class="panel">
@@ -412,6 +455,86 @@ function renderJl(){
       <td>${r.done}</td><td>${r.miss}</td>
       <td>${(r.rate*100).toFixed(1)}%</td>
       <td>${r.maxrun}</td></tr>`).join("");
+
+  /* 每日明细 */
+  const missNames = dates.map((_,i)=> rows.filter(r=>!r.cells[i]).map(r=>r.name));
+  const dayList = dates.map((d,i)=>({d,i}));
+  renderJlDaily(dayList, missNames, hol, nP);
+  document.getElementById("jlWorkOnly").onchange =
+    ()=>renderJlDaily(dayList, missNames, hol, nP);
+
+  /* 每周趋势 */
+  renderJlWeeks(dates, perDate, hol, nP);
+}
+
+const WD = ["周日","周一","周二","周三","周四","周五","周六"];
+function weekdayOf(d){ return WD[new Date(d + "T00:00:00").getDay()]; }
+
+function renderJlDaily(list, missNames, hol, nP){
+  const workOnly = document.getElementById("jlWorkOnly").checked;
+  const view = workOnly ? list.filter(x=>!hol.has(x.d)) : list;
+  const MAXN = 12;
+  document.getElementById("jlDailyCount").textContent =
+    `${view.length} 天 · 每天应打卡 ${nP} 人`;
+  document.getElementById("jlDaily").innerHTML = view.map(({d,i})=>{
+    const names = missNames[i];
+    const n = names.length;
+    const done = nP - n;
+    const rate = done / nP;
+    const holDay = hol.has(d);
+    const cls = holDay ? "" : (rate >= 0.9 ? "r-hi" : rate >= 0.75 ? "r-mid" : "r-lo");
+    const rowStyle = holDay ? 'style="color:#9aa1ab;background:#fafbfc"' : "";
+    const chip = s=>`<span class="nmchip">${esc(s)}</span>`;
+    const head = names.slice(0, MAXN).map(chip).join("");
+    const rest = n > MAXN
+      ? `<span class="more" style="display:none">${names.slice(MAXN).map(chip).join("")}</span>` +
+        `<button class="morebtn" data-n="${n - MAXN}">+${n - MAXN}</button>`
+      : "";
+    return `<tr ${rowStyle}>
+      <td>${d}</td><td>${weekdayOf(d)}</td><td>${holDay ? "否" : "是"}</td>
+      <td><b>${done}</b></td><td>${nP}</td><td>${n}</td>
+      <td class="${cls}">${(rate*100).toFixed(1)}%</td>
+      <td class="nmcell">${n ? head + rest : "—"}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("jlDaily").onclick = e=>{
+    const b = e.target.closest(".morebtn");
+    if(!b) return;
+    const sp = b.previousElementSibling;
+    const hidden = sp.style.display === "none";
+    sp.style.display = hidden ? "" : "none";
+    b.textContent = hidden ? "收起" : "+" + b.dataset.n;
+  };
+}
+
+function renderJlWeeks(dates, perDate, hol, nP){
+  const weeks = [];
+  dates.forEach((d,i)=>{
+    const dt = new Date(d + "T00:00:00");
+    const mon = new Date(dt); mon.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+    const key = mon.toISOString().slice(0,10);
+    let w = weeks.find(x=>x.key === key);
+    if(!w){ w = {key, from:d, to:d, days:0, work:0, expect:0, done:0, holiday:false}; weeks.push(w); }
+    w.to = d; w.days++;
+    if(!hol.has(d)){
+      w.work++; w.expect += nP; w.done += perDate[i];
+    } else if(![0,6].includes(dt.getDay())){
+      w.holiday = true;
+    }
+  });
+  document.getElementById("jlWeeks").innerHTML = weeks.map(w=>{
+    const rate = w.expect ? w.done / w.expect : null;
+    const cls = rate === null ? "" : (rate >= 0.9 ? "r-hi" : rate >= 0.75 ? "r-mid" : "r-lo");
+    const notes = [];
+    if(w.days < 7) notes.push("不完整周");
+    if(w.holiday) notes.push("含节假日");
+    return `<tr>
+      <td>${w.from} ~ ${w.to}</td>
+      <td>${w.work}</td><td>${w.expect}</td><td>${w.done}</td>
+      <td class="${cls}">${rate === null ? "—" : (rate*100).toFixed(1) + "%"}</td>
+      <td style="color:#6b7280">${notes.join(" · ") || "—"}</td>
+    </tr>`;
+  }).join("");
 }
 
 if (location.hash === "#jl") switchView("jl");
