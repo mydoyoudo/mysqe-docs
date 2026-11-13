@@ -63,6 +63,29 @@
   .empty{padding:16px;font-size:13px;color:var(--muted)}
   .demo{background:#fff4e5;border:1px solid #fcd9a4;color:#8a5300;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:14px;display:none}
   footer{font-size:11.5px;color:var(--muted);text-align:center;padding:14px 0 4px}
+
+  /* ---- 视图切换 ---- */
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .tabs button{font:inherit;font-size:13px;padding:8px 16px;border:1px solid var(--line);border-radius:9px;
+    background:#fff;color:var(--muted);cursor:pointer}
+  .tabs button.on{background:var(--dark);color:#fff;border-color:var(--dark);font-weight:600}
+  /* ---- 接龙热力图 ---- */
+  .heat{overflow:auto;max-height:540px;padding:10px 12px}
+  .heat table{border-collapse:separate;border-spacing:2px}
+  .heat th{position:sticky;top:0;background:#fff;font-weight:600;font-size:9.5px;color:var(--muted);
+    padding:2px 0;z-index:3;text-align:center;white-space:nowrap}
+  .heat th.hol{color:var(--warn)}
+  .heat td{padding:0;border:0}
+  .cell{width:9px;height:13px;border-radius:2px;display:block;background:#eef1f5}
+  .cell.on{background:var(--ok)}
+  .cell.miss{background:#fdecec}
+  .heat .nm{position:sticky;left:0;background:#fff;padding:0 10px 0 0;font-size:11.5px;
+    white-space:nowrap;z-index:2;text-align:left;color:var(--text)}
+  .heat tr:hover .nm{background:#f8fafc}
+  .misschip{background:#fdecec;color:#b91c1c;border:1px solid #f7d4d4;border-radius:999px;
+    padding:4px 11px;font-size:12px}
+  .misschip.none{background:#e7f8f1;color:#067952;border-color:#cdeee0}
+
 </style>
 </head>
 <body>
@@ -77,6 +100,13 @@
       <button id="refreshBtn">刷新</button>
     </div>
   </header>
+
+  <div class="tabs">
+    <button id="tabReply" class="on">5M1E 回复看板</button>
+    <button id="tabJl">接龙打卡（79 人 · 66 天）</button>
+  </div>
+
+  <div id="view-reply">
 
   <div class="demo" id="demoNote">演示数据（DEMO）— 接入真实回复数据后此提示自动消失</div>
 
@@ -103,6 +133,39 @@
   <div class="panel">
     <h2>变更 / 异常公示 <span class="count" id="alertCount"></span></h2>
     <div id="alerts"></div>
+  </div>
+
+  </div><!-- /view-reply -->
+
+  <div id="view-jl" style="display:none">
+    <div class="kpis" id="jlKpis"></div>
+
+    <div class="panel">
+      <h2>每日打卡率 <span class="count" id="jlRange"></span></h2>
+      <div id="jlTrend" style="padding:14px 16px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>打卡热力图 <span class="count" id="jlHeatCount"></span>
+        <span style="margin-left:auto"><input id="jlSearch" placeholder="搜索姓名"
+          style="font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:150px"></span>
+      </h2>
+      <div class="heat" id="jlHeat"></div>
+    </div>
+
+    <div class="panel">
+      <h2>今日未打卡 <span class="count" id="jlMissCount"></span></h2>
+      <div id="jlMiss" style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>个人出勤排行 <span class="count">按缺卡数排序</span></h2>
+      <table>
+        <thead><tr><th style="width:44px">#</th><th>姓名</th><th style="width:76px">打卡</th>
+          <th style="width:76px">缺卡</th><th style="width:90px">出勤率</th><th style="width:90px">最长连缺</th></tr></thead>
+        <tbody id="jlPeople"></tbody>
+      </table>
+    </div>
   </div>
 
   <footer>mysqe · 供应商质量管理 · <span id="updatedAt"></span></footer>
@@ -218,6 +281,140 @@ function detailHtml(x){
 function hasChange(x){ return !!(x.m1e && Object.values(x.m1e).some(Boolean)); }
 function kpi(l,v,f,cls){ return `<div class="kpi ${cls}"><div class="lbl">${l}</div><div class="val">${v}</div><div class="foot">${f}</div></div>`; }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ================= 接龙打卡视图 ================= */
+let JL = null;
+
+document.getElementById("tabReply").onclick = () => switchView("reply");
+document.getElementById("tabJl").onclick = () => switchView("jl");
+
+function switchView(v){
+  const isReply = v === "reply";
+  document.getElementById("view-reply").style.display = isReply ? "" : "none";
+  document.getElementById("view-jl").style.display = isReply ? "none" : "";
+  document.getElementById("tabReply").classList.toggle("on", isReply);
+  document.getElementById("tabJl").classList.toggle("on", !isReply);
+  if (location.hash !== (isReply ? "" : "#jl")) history.replaceState(null, "", isReply ? location.pathname : "#jl");
+  if (!isReply) loadJl();
+}
+
+async function loadJl(){
+  if (JL) return;
+  document.getElementById("jlKpis").innerHTML =
+    '<div class="kpi"><div class="lbl">加载中</div><div class="val">—</div></div>';
+  try{
+    const r = await fetch("/api/jielong", {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status === 404 ? "尚未导入接龙数据" : "HTTP " + r.status);
+    JL = await r.json();
+    renderJl();
+  }catch(e){
+    document.getElementById("jlKpis").innerHTML =
+      '<div class="kpi bad"><div class="lbl">接龙数据未导入</div><div class="val">—</div>' +
+      '<div class="foot">' + esc(String(e.message || e)) + '</div></div>';
+  }
+}
+
+let JL_ROWS = [];
+
+function renderJl(){
+  const dates = JL.dates, people = JL.people;
+  const hol = new Set(JL.holidays || []);
+  const nD = dates.length, nP = people.length;
+  const workIdx = [];
+  dates.forEach((d,i)=>{ if(!hol.has(d)) workIdx.push(i); });
+  const workSet = new Set(workIdx);
+
+  let doneAll = 0, doneWork = 0;
+  const perDate = dates.map(()=>0);
+  const rows = people.map(p=>{
+    let done=0, miss=0, run=0, maxrun=0;
+    p.cells.forEach((v,i)=>{
+      if(v){ done++; doneAll++; perDate[i]++; if(workSet.has(i)) doneWork++; run=0; }
+      else { miss++; run++; if(run>maxrun) maxrun=run; }
+    });
+    return {name:p.name, done, miss, maxrun, rate: done/nD,
+            cells:p.cells};
+  });
+  rows.sort((a,b)=> b.miss - a.miss || b.maxrun - a.maxrun || a.name.localeCompare(b.name,"zh"));
+  JL_ROWS = rows;
+
+  const totalCells = nP*nD, totalWork = nP*workIdx.length;
+  const todayIdx = nD - 1;
+  const todayMiss = rows.filter(r=>!r.cells[todayIdx]);
+  const full = rows.filter(r=>r.done === nD).length;
+
+  document.getElementById("jlKpis").innerHTML = [
+    kpi("名单人数", nP, `${nD} 天 · ${dates[0]} 起`, ""),
+    kpi("整体出勤率", (doneAll/totalCells*100).toFixed(1)+"%", `${doneAll.toLocaleString()} / ${totalCells.toLocaleString()} 次`, doneAll/totalCells>0.7?"ok":"warn"),
+    kpi("工作日出勤率", totalWork? (doneWork/totalWork*100).toFixed(1)+"%" : "—", `剔除周末与节假日 ${workIdx.length} 天`, doneWork/totalWork>0.75?"ok":"warn"),
+    kpi("全勤人数", full, `零打卡 ${rows.filter(r=>r.done===0).length} 人`, full>0?"ok":""),
+    kpi("今日未打卡", todayMiss.length, dates[todayIdx] + " · " + (nP-todayMiss.length) + " 人已打", todayMiss.length?"bad":"ok"),
+  ].join("");
+
+  document.getElementById("jlRange").textContent = `${dates[0]} ~ ${dates[nD-1]}`;
+
+  /* 趋势 */
+  const W=1000,H=170,pl=38,pr=12,pt=12,pb=24, iw=W-pl-pr, ih=H-pt-pb;
+  const x=i=> pl + (nD===1? iw/2 : iw*i/(nD-1));
+  const y=v=> pt + ih*(1-v);
+  let grid="",xlab="";
+  [0,0.25,0.5,0.75,1].forEach((g,k)=>{
+    const yy=pt+ih*(1-g);
+    grid+=`<line x1="${pl}" y1="${yy}" x2="${W-pr}" y2="${yy}" stroke="#eef1f5"/>`;
+    grid+=`<text x="${pl-6}" y="${yy+4}" fill="#9aa1ab" font-size="10" text-anchor="end">${g*100}%</text>`;
+  });
+  const step=Math.ceil(nD/12);
+  dates.forEach((d,i)=>{
+    if(i%step===0 || i===nD-1) xlab+=`<text x="${x(i)}" y="${H-8}" fill="#9aa1ab" font-size="10" text-anchor="middle">${d.slice(5)}</text>`;
+  });
+  let bands="";
+  dates.forEach((d,i)=>{ if(hol.has(d)) bands+=`<rect x="${x(i)-6}" y="${pt}" width="12" height="${ih}" fill="#f7f9fc"/>`; });
+  const pts = perDate.map((c,i)=>`${x(i)},${y(c/nP)}`).join(" ");
+  const area = `M ${pl} ${pt+ih} L ` + perDate.map((c,i)=>`${x(i)} ${y(c/nP)}`).join(" L ") + ` L ${x(nD-1)} ${pt+ih} Z`;
+  document.getElementById("jlTrend").innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+    <defs><linearGradient id="gj" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>
+    ${bands}${grid}${xlab}
+    <path d="${area}" fill="url(#gj)"/>
+    <polyline points="${pts}" fill="none" stroke="#3b82f6" stroke-width="2"/>
+    ${perDate.map((c,i)=>`<circle cx="${x(i)}" cy="${y(c/nP)}" r="2.6" fill="#3b82f6"><title>${dates[i]} ${c}/${nP}</title></circle>`).join("")}
+    <text x="${W-pr}" y="${pt+10}" fill="#9aa1ab" font-size="10" text-anchor="end">灰底=周末/节假日/首日半天</text>
+  </svg>`;
+
+  /* 热力图 */
+  const drawHeat = (filter)=>{
+    const list = filter ? rows.filter(r=>r.name.indexOf(filter)>=0) : rows;
+    document.getElementById("jlHeatCount").textContent = `${list.length} 人 × ${nD} 天`;
+    let head = '<tr><th class="nm" style="text-align:left">姓名</th>' +
+      dates.map(d=>`<th class="${hol.has(d)?'hol':''}" title="${d}">${d.slice(8)}</th>`).join("") + "</tr>";
+    let body = list.map(r=>{
+      const tds = r.cells.map((v,i)=>
+        `<td><span class="cell ${v?'on':'miss'}" title="${dates[i]} ${v?'已打卡':'缺卡'}"></span></td>`).join("");
+      return `<tr><td class="nm">${esc(r.name)}</td>${tds}</tr>`;
+    }).join("");
+    document.getElementById("jlHeat").innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  };
+  drawHeat("");
+  document.getElementById("jlSearch").oninput = e=>drawHeat(e.target.value.trim());
+
+  /* 今日未打卡 */
+  document.getElementById("jlMissCount").textContent =
+    `${dates[todayIdx]} · ${todayMiss.length} 人`;
+  document.getElementById("jlMiss").innerHTML = todayMiss.length
+    ? todayMiss.map(r=>`<span class="misschip">${esc(r.name)}</span>`).join("")
+    : '<span class="misschip none">全部已打卡</span>';
+
+  /* 个人排行 */
+  document.getElementById("jlPeople").innerHTML = rows.map((r,i)=>`
+    <tr><td>${i+1}</td>
+      <td><b>${esc(r.name)}</b>${r.done===0?' <span class="tag iss">零打卡</span>':''}</td>
+      <td>${r.done}</td><td>${r.miss}</td>
+      <td>${(r.rate*100).toFixed(1)}%</td>
+      <td>${r.maxrun}</td></tr>`).join("");
+}
+
+if (location.hash === "#jl") switchView("jl");
 
 boot();
 </script>
