@@ -327,12 +327,12 @@ function renderJl(){
   let doneAll = 0, doneWork = 0;
   const perDate = dates.map(()=>0);
   const rows = people.map(p=>{
-    let done=0, miss=0, run=0, maxrun=0;
+    let done=0, miss=0, run=0, maxrun=0, wdone=0;
     p.cells.forEach((v,i)=>{
-      if(v){ done++; doneAll++; perDate[i]++; if(workSet.has(i)) doneWork++; run=0; }
+      if(v){ done++; doneAll++; perDate[i]++; if(workSet.has(i)){ doneWork++; wdone++; } run=0; }
       else { miss++; run++; if(run>maxrun) maxrun=run; }
     });
-    return {name:p.name, done, miss, maxrun, rate: done/nD,
+    return {name:p.name, done, miss, maxrun, wdone, rate: done/nD,
             cells:p.cells};
   });
   rows.sort((a,b)=> b.miss - a.miss || b.maxrun - a.maxrun || a.name.localeCompare(b.name,"zh"));
@@ -341,13 +341,13 @@ function renderJl(){
   const totalCells = nP*nD, totalWork = nP*workIdx.length;
   const todayIdx = nD - 1;
   const todayMiss = rows.filter(r=>!r.cells[todayIdx]);
-  const full = rows.filter(r=>r.done === nD).length;
+  const full = rows.filter(r=>r.wdone === workIdx.length).length;
 
   document.getElementById("jlKpis").innerHTML = [
     kpi("名单人数", nP, `${nD} 天 · ${dates[0]} 起`, ""),
     kpi("整体出勤率", (doneAll/totalCells*100).toFixed(1)+"%", `${doneAll.toLocaleString()} / ${totalCells.toLocaleString()} 次`, doneAll/totalCells>0.7?"ok":"warn"),
     kpi("工作日出勤率", totalWork? (doneWork/totalWork*100).toFixed(1)+"%" : "—", `剔除周末与节假日 ${workIdx.length} 天`, doneWork/totalWork>0.75?"ok":"warn"),
-    kpi("全勤人数", full, `零打卡 ${rows.filter(r=>r.done===0).length} 人`, full>0?"ok":""),
+    kpi("工作日全勤", full, `零打卡 ${rows.filter(r=>r.done===0).length} 人`, full>0?"ok":""),
     kpi("今日未打卡", todayMiss.length, dates[todayIdx] + " · " + (nP-todayMiss.length) + " 人已打", todayMiss.length?"bad":"ok"),
   ].join("");
 
