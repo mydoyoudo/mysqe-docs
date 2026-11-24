@@ -69,16 +69,18 @@ const body = (req) => {
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  let seg = [].concat(req.query.path || []);
-  if (!seg.length) {
-    // 某些部署下 catch-all 参数不注入 query.path，直接按 URL 解析
-    seg = String(req.url || '').split('?')[0].replace(/^\/api\/pba\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  let seg = [];
+  const q = Object.assign({}, req.query);
+  const rawP = String(q.p || '');
+  delete q.p;
+  if (rawP) {
+    const [pPath, pQs] = rawP.split('?');
+    seg = pPath.split('/').filter(Boolean).map((x) => { try { return decodeURIComponent(x); } catch (e) { return x; } });
+    if (pQs) for (const [k, v] of new URLSearchParams(pQs)) q[k] = v;
   }
-  const m = (req.method || 'GET').toUpperCase();
-  const q = req.query || {};
 
   try {
-    if (!seg.length) return res.status(200).json({ ok: true, service: 'pba', url: req.url, query: req.query, orig: req.headers['x-original-url'] || req.headers['x-rewrite-url'] || '' });
+    if (!seg.length) return res.status(200).json({ ok: true, service: 'pba', hint: '/api/pba?p=/ping' });
     if (seg[0] === 'ping') {
       return res.status(200).json({ ok: true, mode: 'blob', time: nowISO() });
     }

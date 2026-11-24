@@ -2619,7 +2619,7 @@ const DB = {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`${url}/api/pba/ping`, { signal: controller.signal });
+        const res = await fetch(`${url}/api/pba?p=%2Fping`, { signal: controller.signal });
         clearTimeout(timeout);
         if (res.ok) {
           this._serverUrl = url;
@@ -2641,7 +2641,7 @@ const DB = {
 
   // 서버 API 호출 헬퍼
   async _api(method, path, body) {
-    const url = `${this._serverUrl}${path.replace(/^\/api/, '/api/pba')}`;
+    const url = `${this._serverUrl}/api/pba?p=${encodeURIComponent(path.replace(/^\/api/, ''))}`;
     const options = {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -19015,7 +19015,7 @@ Screens.setup = async function(container, params) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${url.replace(/\/$/,'')}/api/pba/ping`, { signal: controller.signal });
+      const res = await fetch(`${url.replace(/\/$/,'')}/api/pba?p=%2Fping`, { signal: controller.signal });
       clearTimeout(timeout);
       if (res.ok) {
         const data = await res.json();
