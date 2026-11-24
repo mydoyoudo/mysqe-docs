@@ -69,7 +69,11 @@ const body = (req) => {
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  const seg = [].concat(req.query.path || []);
+  let seg = [].concat(req.query.path || []);
+  if (!seg.length) {
+    // 某些部署下 catch-all 参数不注入 query.path，直接按 URL 解析
+    seg = String(req.url || '').split('?')[0].replace(/^\/api\/pba\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  }
   const m = (req.method || 'GET').toUpperCase();
   const q = req.query || {};
 
