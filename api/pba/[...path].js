@@ -78,7 +78,7 @@ module.exports = async (req, res) => {
   const q = req.query || {};
 
   try {
-    if (!seg.length) return res.status(200).json({ ok: true, service: 'pba', endpoints: 'see /api/pba/ping' });
+    if (!seg.length) return res.status(200).json({ ok: true, service: 'pba', url: req.url, query: req.query, orig: req.headers['x-original-url'] || req.headers['x-rewrite-url'] || '' });
     if (seg[0] === 'ping') {
       return res.status(200).json({ ok: true, mode: 'blob', time: nowISO() });
     }
