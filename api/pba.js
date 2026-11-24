@@ -32,8 +32,6 @@ async function writeJSON(pathname, obj) {
 }
 
 async function removePath(pathname) {
-  const m = (req.method || 'GET').toUpperCase();
-
   try { await del(pathname); } catch (e) { /* already gone */ }
   invalidate(pathname);
 }
@@ -80,6 +78,8 @@ module.exports = async (req, res) => {
     seg = pPath.split('/').filter(Boolean).map((x) => { try { return decodeURIComponent(x); } catch (e) { return x; } });
     if (pQs) for (const [k, v] of new URLSearchParams(pQs)) q[k] = v;
   }
+
+  const m = (req.method || 'GET').toUpperCase();
 
   try {
     if (!seg.length) return res.status(200).json({ ok: true, service: 'pba', hint: '/api/pba?p=/ping' });
