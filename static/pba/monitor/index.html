@@ -114,6 +114,7 @@
 <footer id="foot">数据每 3 秒自动刷新；时区 Asia/Seoul</footer>
 
 <script>
+const API_BASE = 'https://robins-mac-mini.taile08105.ts.net:8443';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pad = (n) => String(n).padStart(2, '0');
@@ -186,7 +187,7 @@ function render(d) {
 async function load() {
   try {
     const q = '/monitor' + (dateMode === 'all' ? '?date=all' : '?date=' + dateMode);
-    const r = await fetch('/api/pba?p=' + encodeURIComponent(q), { cache: 'no-store' });
+    const r = await fetch(API_BASE + '/api/pba?p=' + encodeURIComponent(q), { cache: 'no-store' });
     const d = await r.json();
     render(d);
     $('liveTxt').textContent = '实时同步中';
