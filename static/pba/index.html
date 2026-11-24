@@ -2588,7 +2588,7 @@ function _lsRemove(key) {
 const DB = {
   // 서버 모드 사용 여부 (협력사 방화벽 등 운영 전까지 비활성화)
   // 2번(승인된 HTTPS 서버) 구현 후 true로 변경
-  SERVER_MODE_ENABLED: false,
+  SERVER_MODE_ENABLED: true,
 
   // 서버 모드 상태
   _serverUrl: '',
@@ -2608,7 +2608,7 @@ const DB = {
       this._isServerMode = false;
       return false;
     }
-    const url = this.getServerUrl();
+    const url = this.getServerUrl() || (window.location.protocol.startsWith('http') ? window.location.origin : '');
     if (!url) {
       this._isServerMode = false;
       return false;
@@ -2619,7 +2619,7 @@ const DB = {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`${url}/api/ping`, { signal: controller.signal });
+        const res = await fetch(`${url}/api/pba/ping`, { signal: controller.signal });
         clearTimeout(timeout);
         if (res.ok) {
           this._serverUrl = url;
@@ -2641,7 +2641,7 @@ const DB = {
 
   // 서버 API 호출 헬퍼
   async _api(method, path, body) {
-    const url = `${this._serverUrl}${path}`;
+    const url = `${this._serverUrl}${path.replace(/^\/api/, '/api/pba')}`;
     const options = {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -3123,7 +3123,7 @@ const DB = {
 
   // 점검 1건과 그 점검 결과를 함께 삭제 (취합 덮어쓰기용, 한 트랜잭션으로 처리)
   async deleteInspectionWithResults(inspectionId) {
-    if (this._isServerMode) throw new Error('deleteInspectionWithResults: server mode not supported');
+    if (this._isServerMode) return await this._api('DELETE', `/api/inspections/${inspectionId}`);
     if (this._useMemoryStore) {
       this._memoryStore.inspectionResults = this._memoryStore.inspectionResults.filter(r => r.inspectionId !== inspectionId);
       this._memoryStore.inspections = this._memoryStore.inspections.filter(i => i.id !== inspectionId);
@@ -19015,7 +19015,7 @@ Screens.setup = async function(container, params) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${url}/api/ping`, { signal: controller.signal });
+      const res = await fetch(`${url.replace(/\/$/,'')}/api/pba/ping`, { signal: controller.signal });
       clearTimeout(timeout);
       if (res.ok) {
         const data = await res.json();
