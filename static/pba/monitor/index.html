@@ -163,11 +163,13 @@ function render(d) {
         </div>`).join('');
       return `<div class="line"><div class="line-h">${esc(l.name)}<div class="bar"><i style="width:${l.progress}%"></i></div><span class="p">${l.progress}%</span></div>${rows}</div>`;
     }).join('');
-    return `<div class="partner">
+    const idle = p.status === 'idle';
+    const lineChips = (p.lineNames || []).map((n) => `<span class="chip">Line ${esc(n)}</span>`).join('');
+    return `<div class="partner"${idle ? ' style="opacity:.92"' : ''}>
       <div class="p-head"><div><div class="name">${esc(p.name)}</div><div class="factory">${esc(p.factory || '')}</div></div>
-        <div class="spacer"></div><div class="pct">${p.progress}%</div></div>
-      <div class="chips">${(p.inspectors || []).map((n) => `<span class="chip">👤 ${esc(n)}</span>`).join('')}</div>
-      ${procs}</div>`;
+        <div class="spacer"></div>${idle ? '<span class="st pending">今日未点检</span>' : `<div class="pct">${p.progress}%</div>`}</div>
+      <div class="chips">${(p.inspectors || []).map((n) => `<span class="chip">👤 ${esc(n)}</span>`).join('')}${idle ? lineChips : ''}</div>
+      ${idle ? '<div class="line" style="color:#8b98a6;font-size:12.5px">尚未安排点检，或点检人还未开始</div>' : procs}</div>`;
   }).join('');
 
   const feed = d.feed || [];

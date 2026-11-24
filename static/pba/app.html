@@ -2585,6 +2585,10 @@ function _lsRemove(key) {
   }
 }
 
+// 供应商访问令牌（?s=xxx），进入后记住
+const PBA_SUPPLIER_TOKEN = (new URLSearchParams(location.search).get('s') || localStorage.getItem('pbaSupplierToken') || '');
+try { if (PBA_SUPPLIER_TOKEN) localStorage.setItem('pbaSupplierToken', PBA_SUPPLIER_TOKEN); } catch (e) {}
+
 const DB = {
   // 서버 모드 사용 여부 (협력사 방화벽 등 운영 전까지 비활성화)
   // 2번(승인된 HTTPS 서버) 구현 후 true로 변경
@@ -2641,7 +2645,7 @@ const DB = {
 
   // 서버 API 호출 헬퍼
   async _api(method, path, body) {
-    const url = `${this._serverUrl}/api/pba?p=${encodeURIComponent(path.replace(/^\/api/, ''))}`;
+    const url = `${this._serverUrl}/api/pba?p=${encodeURIComponent(path.replace(/^\/api/, ''))}${PBA_SUPPLIER_TOKEN ? '&s=' + encodeURIComponent(PBA_SUPPLIER_TOKEN) : ''}`;
     const options = {
       method,
       headers: { 'Content-Type': 'application/json' },
