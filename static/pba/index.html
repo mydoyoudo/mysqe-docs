@@ -17623,8 +17623,14 @@ const App = {
       // (확장모드 전환 시 같은 화면을 다시 그리면 정상으로 보이는 것을 확인)
       // 홈 화면은 입력값이 없으므로 한 번 다시 그려도 잃을 내용이 없음
       setTimeout(() => {
-        if (this.currentScreen === 'home') this.render();
-      }, 500);
+        const c = document.getElementById('screenContainer');
+        if (this.currentScreen === 'home' && c && !c.innerHTML.trim()) this.render();
+      }, 600);
+      // 서버 모드에서 초기 렌더가 비는 경우 재시도
+      [1600, 3200].forEach((ms) => setTimeout(() => {
+        const c = document.getElementById('screenContainer');
+        if (this.currentScreen === 'home' && c && !c.innerHTML.trim()) this.render();
+      }, ms));
 
       // 헤더 좌측상단에 버전 정보 표시 (BUILD_INFO 기반)
       this._renderVersionBadge();
