@@ -5487,13 +5487,22 @@ const ChecklistData = {
   // 서버 모드: 체크리스트를 한 번에 업서트 (개별 POST 반복 방지)
   async _loadToServer() {
     const chunkSize = 4;
-    for (let i = 0; i < this.processes.length; i += chunkSize) {
-      const chunk = this.processes.slice(i, i + chunkSize);
+    let src = this;
+    try {
+      const lang = (typeof I18N !== 'undefined') ? I18N.current : 'ko';
+      if (lang && lang !== 'ko' && typeof ChecklistDataI18N !== 'undefined'
+          && ChecklistDataI18N[lang] && ChecklistDataI18N[lang].processes
+          && ChecklistDataI18N[lang].processes.length) {
+        src = ChecklistDataI18N[lang];
+      }
+    } catch (e) {}
+    for (let i = 0; i < src.processes.length; i += chunkSize) {
+      const chunk = src.processes.slice(i, i + chunkSize);
       const payload = {
         processes: chunk.map((proc) => ({
           name: proc.name,
           displayName: proc.displayName,
-          items: (this.items[proc.name] || []).map((item) => ({
+          items: (src.items[proc.name] || []).map((item) => ({
             category: item.category, no: item.no, grade: item.grade,
             checkItem: item.checkItem, checkMethod: item.checkMethod,
             cycle: item.cycle, actionMethod: item.actionMethod,
@@ -5505,8 +5514,8 @@ const ChecklistData = {
       await DB._api('POST', '/api/bulk', payload);
     }
     try { localStorage.setItem('checklistDataVersion', String(this.DATA_VERSION)); } catch (e) {}
-    const total = this.processes.reduce((n, p) => n + (this.items[p.name] || []).length, 0);
-    console.log('[ChecklistData] 서버 모드 일괄 로드: ' + this.processes.length + '개 공정, ' + total + '개 항목');
+    const total = src.processes.reduce((n, p) => n + (src.items[p.name] || []).length, 0);
+    console.log('[ChecklistData] 서버 모드 일괄 로드: ' + src.processes.length + '개 공정, ' + total + '개 항목 (lang=' + (src === this ? 'ko' : 'i18n') + ')');
     return { processCount: this.processes.length, itemCount: total, server: true };
   },
 
@@ -17543,7 +17552,7 @@ const App = {
       // 재시작 후 현재 언어의 체크리스트 데이터 유지
       // - loadToDB는 한국어 마스터 기준으로 로드하므로, 비한국어 언어이면 재적용
       // - applyChecklistLang이 미완성 언어(th/es/vi 등)는 영어로 자동 대체
-      if (typeof I18N !== 'undefined' && I18N.current && I18N.current !== 'ko') {
+      if (typeof I18N !== 'undefined' && I18N.current && I18N.current !== 'ko' && !DB._isServerMode) {
         try {
           await I18N.applyChecklistLang(I18N.current);
           console.log('[App] checklist data re-applied for language:', I18N.current);
