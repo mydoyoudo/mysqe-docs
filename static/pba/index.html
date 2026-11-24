@@ -17622,14 +17622,13 @@ const App = {
       // 첫 실행 직후 홈 화면이 글자/카드 크기가 어긋난 채 그려지는 현상 보정
       // (확장모드 전환 시 같은 화면을 다시 그리면 정상으로 보이는 것을 확인)
       // 홈 화면은 입력값이 없으므로 한 번 다시 그려도 잃을 내용이 없음
-      setTimeout(() => {
+      // 서버 모드에서 초기 렌더가 비는 경우 재시도 (App 명시 참조)
+      [600, 1500, 3000, 5000].forEach((ms) => setTimeout(() => {
         const c = document.getElementById('screenContainer');
-        if (this.currentScreen === 'home' && c && !c.innerHTML.trim()) this.render();
-      }, 600);
-      // 서버 모드에서 초기 렌더가 비는 경우 재시도
-      [1600, 3200].forEach((ms) => setTimeout(() => {
-        const c = document.getElementById('screenContainer');
-        if (this.currentScreen === 'home' && c && !c.innerHTML.trim()) this.render();
+        if (App.currentScreen === 'home' && c && !c.innerHTML.trim()) {
+          console.log('[App] retry render @' + ms + 'ms');
+          App.render();
+        }
       }, ms));
 
       // 헤더 좌측상단에 버전 정보 표시 (BUILD_INFO 기반)
