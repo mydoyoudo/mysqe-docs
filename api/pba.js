@@ -61,6 +61,10 @@ async function removeCollection(prefix) {
   await Promise.all(blobs.map((b) => removePath(b.pathname)));
 }
 
+const itemPath = (processId, type, no, id) =>
+  `${ROOT}/items/${clean(processId)}__${clean(type || 'daily')}__${clean(no)}__${clean(id)}.json`;
+const itemKeyOf = (pathname) => String(pathname).replace(/\.json$/, '').replace(/__[^_/]+$/, '');
+
 const body = (req) => {
   let b = req.body;
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
@@ -192,10 +196,12 @@ module.exports = async (req, res) => {
       }
       if (m === 'PUT') {
         const id = seg[1];
-        const rec = await readJSON(P + clean(id) + '.json');
-        if (!rec) return res.status(404).json({ error: 'not_found' });
+        const blobs = await listBlobs(P);
+        const hit = blobs.find((x) => x.pathname.endsWith(`__${clean(id)}.json`));
+        if (!hit) return res.status(404).json({ error: 'not_found' });
+        const rec = await readJSON(hit.pathname, false);
         Object.assign(rec, body(req));
-        await writeJSON(P + clean(id) + '.json', rec);
+        await writeJSON(hit.pathname, rec);
         return res.status(200).json(rec);
       }
     }
@@ -204,20 +210,19 @@ module.exports = async (req, res) => {
     if (seg[0] === 'checklist-items') {
       const P = `${ROOT}/items/`;
       if (m === 'GET') {
-        let rows = await listJSON(P);
+        const prefix = q.processId ? `${P}${clean(q.processId)}__` : P;
+        let rows = await listJSON(prefix);
         if (q.processId) rows = rows.filter((x) => String(x.processId) === String(q.processId));
         if (q.inspectionType) rows = rows.filter((x) => (x.inspectionType || 'daily') === q.inspectionType);
         return res.status(200).json(rows);
       }
       if (m === 'POST') {
         const b = body(req);
-        const all = await listJSON(P, { useCache: false });
-        const dup = all.find((x) => String(x.processId) === String(b.processId)
-          && String(x.no) === String(b.no) && (x.inspectionType || 'daily') === (b.inspectionType || 'daily'));
-        if (dup) return res.status(200).json(dup.id);
-        const rec = Object.assign({}, b, { id: nid(), createdAt: nowISO() });
-        await writeJSON(P + clean(rec.id) + '.json', rec);
-        return res.status(200).json(rec.id);
+        const type = b.inspectionType || 'daily';
+        const id = nid();
+        const rec = Object.assign({}, b, { id, createdAt: nowISO() });
+        await writeJSON(itemPath(b.processId, type, b.no, id), rec);
+        return res.status(200).json(id);
       }
       if (m === 'PUT') {
         const id = seg[1];
@@ -228,7 +233,12 @@ module.exports = async (req, res) => {
         return res.status(200).json(rec);
       }
       if (m === 'DELETE') {
-        if (seg[1]) { await removePath(P + clean(seg[1]) + '.json'); return res.status(200).json({ ok: true }); }
+        if (seg[1]) {
+          const blobs = await listBlobs(P);
+          const hit = blobs.find((x) => x.pathname.endsWith(`__${clean(seg[1])}.json`));
+          if (hit) await removePath(hit.pathname);
+          return res.status(200).json({ ok: true });
+        }
         if (q.type) {
           const rows = (await listJSON(P)).filter((x) => (x.inspectionType || 'daily') === q.type);
           await Promise.all(rows.map((r) => removePath(P + clean(r.id) + '.json')));
@@ -377,16 +387,17 @@ module.exports = async (req, res) => {
         }
         out.push(rec);
       }
-      const itemsAll = await listJSON(`${ROOT}/items/`, { useCache: false });
-      const seen = new Set(itemsAll.map((i) => `${i.processId}|${i.no}|${i.inspectionType || 'daily'}`));
+      const itemBlobs = await listBlobs(`${ROOT}/items/`);
+      const seen = new Set(itemBlobs.map((x) => itemKeyOf(x.pathname)));
       const jobs = [];
       for (const p of procs) {
         const rec = byName.get(p.name);
         for (const it of (p.items || [])) {
-          const k = `${rec.id}|${it.no}|${it.inspectionType || 'daily'}`;
+          const type = it.inspectionType || 'daily';
+          const k = `${clean(rec.id)}__${clean(type)}__${clean(it.no)}`;
           if (seen.has(k)) continue;
           const item = Object.assign({}, it, { id: nid(), processId: rec.id, createdAt: nowISO() });
-          jobs.push(() => writeJSON(`${ROOT}/items/${clean(item.id)}.json`, item));
+          jobs.push(() => writeJSON(itemPath(rec.id, type, it.no, item.id), item));
         }
       }
       for (let i = 0; i < jobs.length; i += 25) {
