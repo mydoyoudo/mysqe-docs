@@ -5486,6 +5486,14 @@ const ChecklistData = {
   },
   // 서버 모드: 체크리스트를 한 번에 업서트 (개별 POST 반복 방지)
   async _loadToServer() {
+    // 服务器已是最新版本则跳过整包上传
+    try {
+      const v = await DB._api('GET', '/api/checklist-version');
+      if (v && Number(v.version) === Number(this.DATA_VERSION)) {
+        console.log('[ChecklistData] 서버 버전 동일 (' + v.version + ') - 건너뜀');
+        return { processCount: 0, itemCount: 0, skipped: true };
+      }
+    } catch (e) {}
     const chunkSize = 4;
     let src = this;
     try {
@@ -5511,7 +5519,7 @@ const ChecklistData = {
           })),
         })),
       };
-      await DB._api('POST', '/api/bulk', payload);
+      await DB._api('POST', '/api/bulk', Object.assign({ version: this.DATA_VERSION }, payload));
     }
     try { localStorage.setItem('checklistDataVersion', String(this.DATA_VERSION)); } catch (e) {}
     const total = src.processes.reduce((n, p) => n + (src.items[p.name] || []).length, 0);
