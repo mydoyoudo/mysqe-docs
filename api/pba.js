@@ -361,6 +361,40 @@ module.exports = async (req, res) => {
       if (m === 'DELETE') { await removePath(P + clean(seg[1]) + '.json'); return res.status(200).json({ ok: true }); }
     }
 
+    // ===== bulk checklist load =====
+    if (seg[0] === 'bulk' && m === 'POST') {
+      const b = body(req);
+      const procs = b.processes || [];
+      const existing = await listJSON(`${ROOT}/processes/`, { useCache: false });
+      const byName = new Map(existing.map((x) => [x.name, x]));
+      const out = [];
+      for (const p of procs) {
+        let rec = byName.get(p.name);
+        if (!rec) {
+          rec = { id: nid(), name: p.name, displayName: p.displayName, itemCount: (p.items || []).length, createdAt: nowISO() };
+          await writeJSON(`${ROOT}/processes/${clean(rec.id)}.json`, rec);
+          byName.set(p.name, rec);
+        }
+        out.push(rec);
+      }
+      const itemsAll = await listJSON(`${ROOT}/items/`, { useCache: false });
+      const seen = new Set(itemsAll.map((i) => `${i.processId}|${i.no}|${i.inspectionType || 'daily'}`));
+      const jobs = [];
+      for (const p of procs) {
+        const rec = byName.get(p.name);
+        for (const it of (p.items || [])) {
+          const k = `${rec.id}|${it.no}|${it.inspectionType || 'daily'}`;
+          if (seen.has(k)) continue;
+          const item = Object.assign({}, it, { id: nid(), processId: rec.id, createdAt: nowISO() });
+          jobs.push(() => writeJSON(`${ROOT}/items/${clean(item.id)}.json`, item));
+        }
+      }
+      for (let i = 0; i < jobs.length; i += 25) {
+        await Promise.all(jobs.slice(i, i + 25).map((fn) => fn()));
+      }
+      return res.status(200).json({ ok: true, processes: out.map((x) => ({ id: x.id, name: x.name })), added: jobs.length });
+    }
+
     // ===== monitor =====
     if (seg[0] === 'monitor' && m === 'GET') {
       const tz = 'Asia/Seoul';

@@ -5484,8 +5484,35 @@ const ChecklistData = {
     }
     console.log('[ChecklistData] 마이그레이션 완료');
   },
+  // 서버 모드: 체크리스트를 한 번에 업서트 (개별 POST 반복 방지)
+  async _loadToServer() {
+    const chunkSize = 4;
+    for (let i = 0; i < this.processes.length; i += chunkSize) {
+      const chunk = this.processes.slice(i, i + chunkSize);
+      const payload = {
+        processes: chunk.map((proc) => ({
+          name: proc.name,
+          displayName: proc.displayName,
+          items: (this.items[proc.name] || []).map((item) => ({
+            category: item.category, no: item.no, grade: item.grade,
+            checkItem: item.checkItem, checkMethod: item.checkMethod,
+            cycle: item.cycle, actionMethod: item.actionMethod,
+            remark: item.remark || '',
+            inspectionType: this._inferInspectionType(item.cycle),
+          })),
+        })),
+      };
+      await DB._api('POST', '/api/bulk', payload);
+    }
+    try { localStorage.setItem('checklistDataVersion', String(this.DATA_VERSION)); } catch (e) {}
+    const total = this.processes.reduce((n, p) => n + (this.items[p.name] || []).length, 0);
+    console.log('[ChecklistData] 서버 모드 일괄 로드: ' + this.processes.length + '개 공정, ' + total + '개 항목');
+    return { processCount: this.processes.length, itemCount: total, server: true };
+  },
+
   // DB에 초기 데이터 로드
   async loadToDB() {
+    if (DB._isServerMode) return await this._loadToServer();
     // 기존 데이터 확인
     const existing = await DB.getAllProcesses();
     if (existing.length > 0) {
@@ -5531,6 +5558,7 @@ const ChecklistData = {
 
   // DB 초기화 후 재로드 (강제 로드)
   async reloadToDB() {
+    if (DB._isServerMode) return await this._loadToServer();
     await DB.deleteAllProcesses();
 
     // 안전한 순차 삽입 방식 사용 (db 직접 접근 대신 DB 헬퍼 메서드 사용)
