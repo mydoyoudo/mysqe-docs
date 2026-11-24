@@ -32,6 +32,8 @@ async function writeJSON(pathname, obj) {
 }
 
 async function removePath(pathname) {
+  const m = (req.method || 'GET').toUpperCase();
+
   try { await del(pathname); } catch (e) { /* already gone */ }
   invalidate(pathname);
 }
