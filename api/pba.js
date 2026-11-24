@@ -268,7 +268,11 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ok: true });
       }
       if (m === 'PUT' && seg[2] === 'counts') {
-        const rec = await readJSON(P + clean(seg[1]) + '.json');
+        let rec = await readJSON(P + clean(seg[1]) + '.json');
+        for (let i = 0; !rec && i < 3; i++) {          // Blob 写入后短时不可见时重试
+          await new Promise((r) => setTimeout(r, 350));
+          rec = await readJSON(P + clean(seg[1]) + '.json');
+        }
         if (!rec) return res.status(404).json({ error: 'not_found' });
         const b = body(req);
         ['totalCount', 'passCount', 'failCount', 'naCount', 'holdCount'].forEach((k) => {

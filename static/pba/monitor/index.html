@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PBA 点检监控看板</title>
+<style>
+  :root{
+    --blue:#2196F3; --blue-d:#1565C0; --bg:#eef2f6; --card:#fff;
+    --ink:#1c2733; --sub:#5b6b7c; --line:#e2e8ef;
+    --green:#2e9e5b; --red:#e05252; --amber:#e0a13c; --gray:#95a3b3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;font-size:14px}
+  header{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.3px}
+  header .scope{font-size:12.5px;opacity:.9;background:rgba(255,255,255,.16);padding:4px 10px;border-radius:20px}
+  header .spacer{flex:1}
+  header input[type=date]{border:none;border-radius:8px;padding:7px 10px;font-size:13px;color:#1c2733;background:#fff}
+  header button{border:none;border-radius:8px;padding:7px 12px;font-size:13px;background:rgba(255,255,255,.18);color:#fff;cursor:pointer}
+  header button:hover{background:rgba(255,255,255,.3)}
+  .live{display:flex;align-items:center;gap:6px;font-size:12.5px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#7CFFB2;box-shadow:0 0 0 0 rgba(124,255,178,.7);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(124,255,178,.6)}70%{box-shadow:0 0 0 8px rgba(124,255,178,0)}100%{box-shadow:0 0 0 0 rgba(124,255,178,0)}}
+
+  main{padding:16px 20px 24px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+  @media(max-width:1180px){main{grid-template-columns:1fr}}
+
+  .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--card);border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(16,32,56,.08)}
+  .kpi .lab{font-size:12px;color:var(--sub)}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:2px;line-height:1.1}
+  .kpi .val small{font-size:12px;font-weight:500;color:var(--sub);margin-left:2px}
+  .kpi.red .val{color:var(--red)}
+  .kpi.green .val{color:var(--green)}
+  .bar{height:6px;border-radius:4px;background:#edf1f5;overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#42a5f5,#1976d2);border-radius:4px;transition:width .4s}
+
+  .partner{background:var(--card);border-radius:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(16,32,56,.08);overflow:hidden}
+  .p-head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .p-head .name{font-size:15px;font-weight:700}
+  .p-head .factory{font-size:12px;color:var(--sub)}
+  .p-head .spacer{flex:1}
+  .p-head .pct{font-size:15px;font-weight:700;color:var(--blue-d)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0}
+  .chip{font-size:12px;background:#eef5fd;color:#1565C0;border-radius:20px;padding:3px 10px}
+  .line{padding:6px 16px 14px}
+  .line-h{display:flex;align-items:center;gap:10px;padding:8px 0 6px;font-size:13px;font-weight:600;color:#33475b}
+  .line-h .bar{flex:1;margin:0;height:5px}
+  .line-h .p{font-size:12px;color:var(--sub);font-weight:500}
+  .proc{display:grid;grid-template-columns:1.25fr .9fr 88px 150px 70px;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;font-size:13px}
+  .proc:nth-child(odd){background:#fafcfe}
+  .proc .pn{font-weight:600}
+  .proc .insp{color:var(--sub);font-size:12.5px}
+  .proc .num{font-variant-numeric:tabular-nums;color:#37475a}
+  .proc .num b{color:var(--red)}
+  .proc .pg{display:flex;align-items:center;gap:8px}
+  .proc .pg .bar{flex:1;margin:0;height:5px}
+  .proc .pg span{font-size:11.5px;color:var(--sub);width:34px;text-align:right}
+  .st{font-size:11.5px;padding:3px 8px;border-radius:20px;text-align:center;white-space:nowrap}
+  .st.done{background:#e8f6ee;color:#2e9e5b}
+  .st.running{background:#e8f2fd;color:#1565C0}
+  .st.pending{background:#f0f3f6;color:#7b8a99}
+  .updated{font-size:11px;color:var(--gray);margin-left:8px}
+
+  .feed{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(16,32,56,.08);overflow:hidden;position:sticky;top:14px}
+  .feed h2{font-size:14px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .feed h2 .badge{background:#fdecec;color:#c0392b;border-radius:20px;padding:1px 8px;font-size:11.5px}
+  .ng{padding:10px 14px;border-bottom:1px solid #f2f5f8;font-size:12.5px}
+  .ng:last-child{border-bottom:none}
+  .ng .t{color:var(--gray);font-size:11px}
+  .ng .m{margin-top:3px;line-height:1.5}
+  .ng .m b{color:#c0392b}
+  .ng .tag{font-size:11px;padding:1px 6px;border-radius:4px;margin-right:4px}
+  .ng .tag.fail{background:#fdecec;color:#c0392b}
+  .ng .tag.hold{background:#fdf3e3;color:#b7791f}
+  .empty{padding:26px 14px;text-align:center;color:var(--gray);font-size:13px}
+  footer{padding:0 22px 18px;color:#8b98a6;font-size:11.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>PBA 点检监控看板</h1>
+  <span class="scope" id="scope">—</span>
+  <div class="live"><span class="dot"></span><span id="liveTxt">实时同步中</span></div>
+  <div class="spacer"></div>
+  <input type="date" id="date">
+  <button id="btnAll">全部日期</button>
+  <button id="btnFull">全屏</button>
+</header>
+
+<main>
+  <section>
+    <div class="kpis">
+      <div class="kpi"><div class="lab">点检批次</div><div class="val" id="kInsp">0</div></div>
+      <div class="kpi"><div class="lab">产线 / 点检员</div><div class="val"><span id="kLine">0</span><small>/</small><span id="kMan">0</span></div></div>
+      <div class="kpi green"><div class="lab">总完成进度</div><div class="val" id="kProg">0<small>%</small></div><div class="bar"><i id="kBar" style="width:0%"></i></div></div>
+      <div class="kpi"><div class="lab">已点检 / 应点检</div><div class="val" id="kDone">0<small>/0</small></div></div>
+      <div class="kpi red"><div class="lab">不良 / 保留</div><div class="val" id="kNg">0<small>/0</small></div></div>
+    </div>
+    <div id="partners"></div>
+    <div id="empty" class="empty" style="display:none">当前没有点检记录</div>
+  </section>
+
+  <aside class="feed">
+    <h2>不良明细 <span class="badge" id="ngCount">0</span></h2>
+    <div id="feed"></div>
+    <div id="feedEmpty" class="empty">暂无不良</div>
+  </aside>
+</main>
+
+<footer id="foot">数据每 3 秒自动刷新；时区 Asia/Seoul</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad = (n) => String(n).padStart(2, '0');
+const todaySeoul = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+
+let dateMode = todaySeoul();
+let timer = null;
+
+function rel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const s = Math.max(0, Math.round((Date.now() - d.getTime()) / 1000));
+  if (s < 60) return s + ' 秒前';
+  if (s < 3600) return Math.round(s / 60) + ' 分钟前';
+  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function statusOf(p) {
+  if (p.status === 'done') return '<span class="st done">已完成</span>';
+  if (p.status === 'running') return '<span class="st running">进行中</span>';
+  return '<span class="st pending">未开始</span>';
+}
+
+function render(d) {
+  const t = d.totals || {};
+  $('scope').textContent = (d.date === 'all' ? '全部日期' : d.date) + ' · ' + (t.inspections || 0) + ' 批';
+  $('kInsp').textContent = t.inspections || 0;
+  $('kLine').textContent = t.lines || 0;
+  $('kMan').textContent = t.inspectors || 0;
+  $('kProg').innerHTML = (t.progress || 0) + '<small>%</small>';
+  $('kBar').style.width = (t.progress || 0) + '%';
+  $('kDone').innerHTML = (t.done || 0) + '<small>/' + (t.items || 0) + '</small>';
+  $('kNg').innerHTML = (t.fail || 0) + '<small>/' + (t.hold || 0) + '</small>';
+
+  const ps = d.partners || [];
+  $('empty').style.display = ps.length ? 'none' : 'block';
+  $('partners').innerHTML = ps.map((p) => {
+    const procs = p.lines.map((l) => {
+      const rows = l.processes.map((x) => `
+        <div class="proc">
+          <div class="pn">${esc(x.process)}<span class="updated">${rel(x.updatedAt)}</span></div>
+          <div class="insp">${esc(x.inspector)}</div>
+          <div class="num">${x.done}/${x.total}${x.fail ? ' · <b>' + x.fail + ' NG</b>' : ''}</div>
+          <div class="pg"><div class="bar"><i style="width:${x.progress}%"></i></div><span>${x.progress}%</span></div>
+          <div>${statusOf(x)}</div>
+        </div>`).join('');
+      return `<div class="line"><div class="line-h">${esc(l.name)}<div class="bar"><i style="width:${l.progress}%"></i></div><span class="p">${l.progress}%</span></div>${rows}</div>`;
+    }).join('');
+    return `<div class="partner">
+      <div class="p-head"><div><div class="name">${esc(p.name)}</div><div class="factory">${esc(p.factory || '')}</div></div>
+        <div class="spacer"></div><div class="pct">${p.progress}%</div></div>
+      <div class="chips">${(p.inspectors || []).map((n) => `<span class="chip">👤 ${esc(n)}</span>`).join('')}</div>
+      ${procs}</div>`;
+  }).join('');
+
+  const feed = d.feed || [];
+  $('ngCount').textContent = (t.fail || 0) + (t.hold || 0);
+  $('feedEmpty').style.display = feed.length ? 'none' : 'block';
+  $('feed').innerHTML = feed.map((f) => `
+    <div class="ng">
+      <div class="t">${rel(f.time)} · ${esc(f.partner)} / ${esc(f.line)} / ${esc(f.process)}</div>
+      <div class="m"><span class="tag ${f.status}">${f.status === 'fail' ? 'NG' : '保留'}</span>
+        第 ${esc(f.itemNo)} 项 · ${esc(f.inspector)}${f.remark ? ' · ' + esc(f.remark) : ''}</div>
+    </div>`).join('');
+
+  $('foot').textContent = '最后更新 ' + new Date(d.generatedAt).toLocaleTimeString('zh-CN', { hour12: false })
+    + ' · 每 3 秒自动刷新 · 时区 Asia/Seoul';
+}
+
+async function load() {
+  try {
+    const q = '/monitor' + (dateMode === 'all' ? '?date=all' : '?date=' + dateMode);
+    const r = await fetch('/api/pba?p=' + encodeURIComponent(q), { cache: 'no-store' });
+    const d = await r.json();
+    render(d);
+    $('liveTxt').textContent = '实时同步中';
+  } catch (e) {
+    $('liveTxt').textContent = '连接中断，重试中…';
+  }
+}
+
+function tick() {
+  if (document.hidden) return;
+  load();
+}
+
+$('date').value = todaySeoul();
+$('date').addEventListener('change', (e) => { dateMode = e.target.value || todaySeoul(); load(); });
+$('btnAll').addEventListener('click', () => { dateMode = 'all'; load(); });
+$('btnFull').addEventListener('click', () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+});
+
+load();
+timer = setInterval(tick, 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>
